@@ -19,26 +19,27 @@ extern enum muzzy_loglevel MUZZY_LOG_LEVEL;
 extern FILE *MUZZY_LOG_TARGET;
 
 #define muzzy_dbg_assert(a) assert((a))
-#define muzzy_log_fprintf(f, level, ...)                                        \
-  if ((level) <= LOG_LEVEL) {                                                  \
+#define muzzy_log_fprintf(f, level, ...)                                       \
+  if ((level) <= MUZZY_LOG_LEVEL) {                                            \
     fprintf((f), "[%d] ", level);                                              \
     fprintf((f), __VA_ARGS__);                                                 \
   }
 
-#define muzzy_dbg(...) muzzy_log_fprintf(stderr, MUZZY_LOG_LEVEL_DBG, __VA_ARGS__)
-#define muzzy_warn(...)                                                         \
+#define muzzy_dbg(...)                                                         \
+  muzzy_log_fprintf(stderr, MUZZY_LOG_LEVEL_DBG, __VA_ARGS__)
+#define muzzy_warn(...)                                                        \
   muzzy_log_fprintf(stderr, MUZZY_LOG_LEVEL_WARN, __VA_ARGS__)
-#define muzzy_info(...)                                                         \
+#define muzzy_info(...)                                                        \
   muzzy_log_fprintf(stderr, MUZZY_LOG_LEVEL_INFO, __VA_ARGS__)
-#define muzzy_error(...)                                                        \
+#define muzzy_error(...)                                                       \
   muzzy_log_fprintf(stderr, MUZZY_LOG_LEVEL_ERROR, __VA_ARGS__)
 
-#define muzzy_panic(...)                                                        \
+#define muzzy_panic(...)                                                       \
   {                                                                            \
     fprintf(stderr, __VA_ARGS__);                                              \
     exit(-1);                                                                  \
   }
-#define muzzy_todo(...)                                                         \
+#define muzzy_todo(...)                                                        \
   { muzzy_panic(__VA_ARGS__); }
 
 #endif

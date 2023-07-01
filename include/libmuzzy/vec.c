@@ -1,5 +1,7 @@
 #include "libmuzzy/vec.h"
+#include "libmuzzy/error.h"
 #include "libmuzzy/macros.h"
+#include "libmuzzy/log.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -15,9 +17,21 @@ struct muzzy_vec muzzy_vec_init(size_t stride) {
   return self;
 }
 
+#define muzzy_vec_offset(self, index)                                          \
+  ((uint8_t *)(self)->data + (self)->strode * (index))
+
 void muzzy_vec_resize(struct muzzy_vec *self) {}
 
-void muzzy_vec_push(struct muzzy_vec *self, void *item) {}
+void muzzy_vec_push(struct muzzy_vec *self, void *item) {
+  if (self->len >= self->max_len) {
+    muzzy_vec_resize(self);
+    if (muzzy_err()) {
+      muzzy_error("Unable to resize vec %p!\n", (void *)self);
+      return;
+    }
+  }
+}
+
 void *muzzy_vec_pop(struct muzzy_vec *self, void *item) {}
 
 void *muzzy_vec_get(struct muzzy_vec *self, size_t index) {}
