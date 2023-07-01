@@ -20,7 +20,8 @@ struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
 
   // output params
   char progname[] = "muzzy";
-  char short_desc[] = "";
+  char short_desc[] =
+      "muzzy - mini fuzzer\nWritten by Lukas Krickl <lukas@krickl.dev>";
 
   // version info
   int version_major = 0;
