@@ -3,8 +3,7 @@
 
 #include <stddef.h>
 
-#define muzzy_vec_pop(type, self) ((type)) muzzy_vec_pop((self))
-#define muzzy_vec_get(type, self, index) ((type)) muzzy_vec_get((self), (index))
+#define MUZZY_VEC_DEFAULT_MAX_LEN 16
 
 struct muzzy_vec {
   size_t stride;
@@ -16,9 +15,9 @@ struct muzzy_vec {
 struct muzzy_vec muzzy_vec_init(size_t stride);
 
 void muzzy_vec_push(struct muzzy_vec *self, void *item);
-void *muzzy_vec_pop_vp(struct muzzy_vec *self, void *item);
+void *muzzy_vec_pop(struct muzzy_vec *self, void *item);
 
-void *muzzy_vec_get_vp(struct muzzy_vec *self, size_t index);
+void *muzzy_vec_get(struct muzzy_vec *self, size_t index);
 
 void muzz_vec_free(struct muzzy_vec *self);
 
