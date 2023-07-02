@@ -1,0 +1,1 @@
+#include "libmuzzy/fuzz.h"
