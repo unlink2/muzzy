@@ -32,10 +32,10 @@ const char *muzzy_err_to_str(enum muzzy_error self);
 
 #define muzzy_err_msg(...) sprintf(muzzy_err_msg_ptr(), __VA_ARGS__);
 
-#define muzzy_errno()                                                           \
+#define muzzy_errno()                                                          \
   {                                                                            \
-    gape_err_set(GAPE_ERRNO);                                                  \
-    gape_err_detail(&errno, sizeof(errno));                                    \
+    muzzy_err_set(MUZZY_ERRNO);                                                \
+    muzzy_err_detail(&errno, sizeof(errno));                                   \
   }
 
 #define muzzy_err_detail(data, len) memcpy(muzzy_err_details_ptr(), data, len);
@@ -66,7 +66,7 @@ void *muzzy_err_details_ptr(void);
 size_t muzzy_err_details_len(void);
 
 // bail on error macro
-#define muzzy_ok_or(err, ret)                                                   \
+#define muzzy_ok_or(err, ret)                                                  \
   {                                                                            \
     if ((err)) {                                                               \
       return (ret);                                                            \
@@ -74,7 +74,7 @@ size_t muzzy_err_details_len(void);
   }
 
 // optional struct
-#define muzzy_some_or(optional, ret)                                            \
+#define muzzy_some_or(optional, ret)                                           \
   {                                                                            \
     if ((optional)) {                                                          \
       return (ret);                                                            \

@@ -4,6 +4,7 @@
 #include "libmuzzy/log.h"
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 struct muzzy_vec muzzy_vec_init(size_t stride) {
   struct muzzy_vec self;
@@ -18,9 +19,18 @@ struct muzzy_vec muzzy_vec_init(size_t stride) {
 }
 
 #define muzzy_vec_offset(self, index)                                          \
-  ((uint8_t *)(self)->data + (self)->strode * (index))
+  ((uint8_t *)(self)->data + (self)->stride * (index))
 
-void muzzy_vec_resize(struct muzzy_vec *self) {}
+void muzzy_vec_resize(struct muzzy_vec *self) {
+  self->max_len = self->max_len * 2;
+  void *new_data = realloc(self->data, self->stride * self->max_len);
+
+  if (new_data) {
+    self->data = new_data;
+  } else {
+    muzzy_errno();
+  }
+}
 
 void muzzy_vec_push(struct muzzy_vec *self, void *item) {
   if (self->len >= self->max_len) {
@@ -30,10 +40,19 @@ void muzzy_vec_push(struct muzzy_vec *self, void *item) {
       return;
     }
   }
+
+  memcpy(muzzy_vec_offset(self, self->len), item, self->stride);
 }
 
-void *muzzy_vec_pop(struct muzzy_vec *self, void *item) {}
+void *muzzy_vec_pop(struct muzzy_vec *self, void *item) {
+  return muzzy_vec_get(self, self->len--);
+}
 
-void *muzzy_vec_get(struct muzzy_vec *self, size_t index) {}
+void *muzzy_vec_get(struct muzzy_vec *self, size_t index) {
+  if (self->len == 0) {
+    return NULL;
+  }
+  return muzzy_vec_offset(self, index);
+}
 
 void muzz_vec_free(struct muzzy_vec *self) { free(self->data); }
