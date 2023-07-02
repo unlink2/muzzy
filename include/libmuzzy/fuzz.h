@@ -5,6 +5,7 @@
 
 #define MUZZY_DEFAULT_REPLACE_WORD "FUZZ"
 #define MUZZY_DEFAULT_SEPARATOR ""
+#define MUZZY_PATH_SEPARATOR ':'
 
 struct muzzy_words {
   struct muzzy_vec list;
@@ -17,7 +18,8 @@ struct muzzy_words {
 };
 
 struct muzzy_words muzzy_words_init(void);
-struct muzzy_words muzzy_words_from_file(const char *path);
+
+struct muzzy_words muzzy_words_from_file(const char *rep_sep_path);
 
 // apply a random word  to the input string
 // if the replace word appears in the input string
