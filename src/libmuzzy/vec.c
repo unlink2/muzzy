@@ -8,7 +8,7 @@
 
 struct muzzy_vec muzzy_vec_init(size_t stride) {
   struct muzzy_vec self;
-  memclear(self);
+  memset(&self, 0, sizeof(self));
 
   self.stride = stride;
   self.max_len = MUZZY_VEC_DEFAULT_MAX_LEN;

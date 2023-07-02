@@ -3,7 +3,8 @@
 
 #include "libmuzzy/vec.h"
 
-#define MUZZY_DEFAULT_REPLACE_WORD = "FUZZ"
+#define MUZZY_DEFAULT_REPLACE_WORD "FUZZ"
+#define MUZZY_DEFAULT_SEPARATOR ""
 
 struct muzzy_words {
   struct muzzy_vec list;
@@ -36,6 +37,6 @@ const char *muzzy_words_apply(const struct muzzy_words *self, const char *input,
 const char *muzzy_words_ins_rep(const struct muzzy_words *self, const char *buf,
                                 size_t buf_len, size_t *len);
 
-void muzzy_words_free(void);
+void muzzy_words_free(struct muzzy_words *self);
 
 #endif
