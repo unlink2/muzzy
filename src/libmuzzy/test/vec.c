@@ -19,8 +19,10 @@ void test_vec(void **state) {
   for (int i = 0; i < MUZZY_VEC_DEFAULT_MAX_LEN * 4; i++) {
     int *r = muzzy_vec_get(&v, i);
     assert_int_equal(0 - i, *r);
+
     int *p = muzzy_vec_pop(&v);
-    assert_int_equal(0 - i, *p);
+    assert_non_null(p);
+    assert_int_equal(MUZZY_VEC_DEFAULT_MAX_LEN * 4 - i - 1, v.len);
   }
 
   muzzy_vec_free(&v);
