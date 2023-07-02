@@ -42,10 +42,15 @@ void muzzy_vec_push(struct muzzy_vec *self, void *item) {
   }
 
   memcpy(muzzy_vec_offset(self, self->len), item, self->stride);
+  self->len++;
 }
 
-void *muzzy_vec_pop(struct muzzy_vec *self, void *item) {
-  return muzzy_vec_get(self, self->len--);
+void *muzzy_vec_pop(struct muzzy_vec *self) {
+  void *d = muzzy_vec_get(self, self->len - 1);
+  if (d) {
+    self->len--;
+  }
+  return d;
 }
 
 void *muzzy_vec_get(struct muzzy_vec *self, size_t index) {
@@ -55,4 +60,4 @@ void *muzzy_vec_get(struct muzzy_vec *self, size_t index) {
   return muzzy_vec_offset(self, index);
 }
 
-void muzz_vec_free(struct muzzy_vec *self) { free(self->data); }
+void muzzy_vec_free(struct muzzy_vec *self) { free(self->data); }

@@ -15,10 +15,10 @@ struct muzzy_vec {
 struct muzzy_vec muzzy_vec_init(size_t stride);
 
 void muzzy_vec_push(struct muzzy_vec *self, void *item);
-void *muzzy_vec_pop(struct muzzy_vec *self, void *item);
+void *muzzy_vec_pop(struct muzzy_vec *self);
 
 void *muzzy_vec_get(struct muzzy_vec *self, size_t index);
 
-void muzz_vec_free(struct muzzy_vec *self);
+void muzzy_vec_free(struct muzzy_vec *self);
 
 #endif
