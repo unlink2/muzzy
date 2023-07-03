@@ -23,23 +23,13 @@ struct muzzy_words muzzy_words_init(void);
 struct muzzy_words muzzy_words_from_file(const char *path, const char *rep,
                                          const char *sep);
 
-// apply a random word  to the input string
-// if the replace word appears in the input string this will malloc a new
-// string. If the operation was successful return the allocated string and
-// the location where the replace sequence was replaced in *at as well as the
-// length of it in *rep_len.
-//
-// if it does not this will simply return the input string and set *at
-// and *end to NULL to signal that no malloc was performed.
-const char *muzzy_words_apply(const struct muzzy_words *self, const char *input,
-                              ssize_t *at, size_t *rep_len);
+// obtain a random word from the word list
+const char *muzzy_words_next(const struct muzzy_words *self);
 
-// insert the separator and repalce string at the specified location
-// 'at'. This will allocate a new string and insert the data at the specified
-// location + len.
-// Returns the newly allocated string on success
-const char *muzzy_words_ins_rep(const struct muzzy_words *self,
-                                const char *input, size_t at);
+// apply a words to the input string. The words are appended in order
+// All occurances of 'replace' are replaced with the apropriate list of words
+const char *muzzy_words_apply(const char *replace, const char **words,
+                              size_t len);
 
 void muzzy_words_free(struct muzzy_words *self);
 
