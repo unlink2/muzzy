@@ -19,7 +19,8 @@ struct muzzy_words {
 
 struct muzzy_words muzzy_words_init(void);
 
-struct muzzy_words muzzy_words_from_file(const char *rep_sep_path);
+struct muzzy_words muzzy_words_from_file(const char *path, const char *rep,
+                                         const char *sep);
 
 // apply a random word  to the input string
 // if the replace word appears in the input string
