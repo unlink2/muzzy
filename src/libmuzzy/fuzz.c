@@ -46,4 +46,10 @@ struct muzzy_words muzzy_words_from_file(const char *path, const char *rep,
   return self;
 }
 
-void muzzy_words_free(struct muzzy_words *self) { muzzy_vec_free(&self->list); }
+void muzzy_words_free(struct muzzy_words *self) {
+  for (size_t i = 0; i < self->list.len; i++) {
+    char **s = muzzy_vec_get(&self->list, i);
+    free(*s);
+  }
+  muzzy_vec_free(&self->list);
+}
