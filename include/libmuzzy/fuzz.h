@@ -28,8 +28,10 @@ const char *muzzy_words_next(const struct muzzy_words *self);
 
 // apply a words to the input string. The words are appended in order
 // All occurances of 'replace' are replaced with the apropriate list of words
-const char *muzzy_words_apply(const char *replace, const char **words,
-                              size_t len);
+// If n is set to -1 all words are replaced, otherwise it will stop when no word
+// is left to replace
+char *muzzy_words_rep(const char *input, const char *replace,
+                      const char **words, size_t len, ssize_t n);
 
 void muzzy_words_free(struct muzzy_words *self);
 
