@@ -6,7 +6,10 @@
 
 typedef int64_t (*muzzy_rand)(void *data);
 
+enum muzzy_rands { MUZZY_STDRAND = 0, MUZZY_FRAND };
+
 struct muzzy_rand_cfg {
+  enum muzzy_rands kind;
   union {
     struct {
       const char *src_path;

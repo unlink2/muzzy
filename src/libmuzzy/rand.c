@@ -14,6 +14,7 @@ struct muzzy_rand_cfg muzzy_rand_cfg_init(void) {
 struct muzzy_rand_cfg muzzy_rand_cfg_file(const char *path) {
   struct muzzy_rand_cfg self = muzzy_rand_cfg_init();
 
+  self.kind = MUZZY_FRAND;
   self.src_path = path;
   self.fp = fopen(path, "re");
   if (!self.fp) {
@@ -35,4 +36,13 @@ int64_t muzzy_frand(void *data) {
   return res;
 }
 
+void muzzy_rand_cfg_free(struct muzzy_rand_cfg *self) {
+  switch (self->kind) {
+  case MUZZY_FRAND:
+    muzzy_frand_cfg_free(self);
+    break;
+  default:
+    break;
+  }
+}
 void muzzy_frand_cfg_free(struct muzzy_rand_cfg *self) { fclose(self->fp); }
