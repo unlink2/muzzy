@@ -2,6 +2,7 @@
 #define FUZZ_H_
 
 #include "libmuzzy/vec.h"
+#include <stdint.h>
 #include <stdio.h>
 
 #define MUZZY_DEFAULT_REPLACE_WORD "FUZZ"
@@ -24,7 +25,9 @@ struct muzzy_words muzzy_words_from_file(const char *path, const char *rep,
                                          const char *sep);
 
 // obtain a random word from the word list
-const char *muzzy_words_next(const struct muzzy_words *self);
+// it requires an index number that can be provided by any source
+// (most commonly an rng function call)
+const char *muzzy_words_next(const struct muzzy_words *self, int64_t i);
 
 // apply a words to the input string. The words are appended in order
 // All occurances of 'replace' are replaced with the apropriate list of words
