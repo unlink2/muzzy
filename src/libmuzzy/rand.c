@@ -23,7 +23,7 @@ struct muzzy_rand_cfg muzzy_rand_cfg_file(const char *path) {
   return self;
 }
 
-int64_t muzzy_rand(void *data) { return rand(); } // NOLINT
+int64_t muzzy_stdrand(void *data) { return rand(); } // NOLINT
 
 int64_t muzzy_frand(void *data) {
   struct muzzy_rand_cfg *cfg = data;
