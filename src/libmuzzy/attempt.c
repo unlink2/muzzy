@@ -2,8 +2,10 @@
 #include "libmuzzy/buffer.h"
 #include "libmuzzy/error.h"
 #include "libmuzzy/fuzz.h"
+#include "libmuzzy/vec.h"
 #include <limits.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 struct muzzy_attempt muzzy_attempt_init(void) {
@@ -18,18 +20,50 @@ struct muzzy_attempt muzzy_attempt_init(void) {
 struct muzzy_attempt muzzy_attempt_from_cfg(struct muzzy_config *cfg) {
   struct muzzy_attempt self = muzzy_attempt_init();
 
+  size_t args_len = 1; // start at 1 to insert NULL in the end
+  const char **arg = self.args;
+  while (arg[0]) {
+    arg++;
+    args_len++;
+  }
+
+  self.modified_args_buf = malloc(sizeof(char *) * args_len);
+  memset(self.modified_args_buf, 0, sizeof(char *) * args_len);
+
   return self;
+}
+
+void muzzy_attempt_args_buf_free(struct muzzy_attempt *self) {
+  const char **arg = self->modified_args_buf;
+  while (arg[0]) {
+    free((void *)arg[0]);
+    arg++;
+  }
 }
 
 int muzzy_attempt_dry(struct muzzy_attempt *self) {}
 
-int muzzy_attempt_exec(struct muzzy_attempt *self) {
+int muzzy_attempt_words(struct muzzy_attempt *self) {
   // fuzz the input
-  const char *arg = self->args[0];
-  while (arg) {
+  muzzy_attempt_args_buf_free(self);
+  const char **arg = self->args;
+  const char **buf = self->modified_args_buf;
+  while (arg[0]) {
     int64_t rng = self->rand(&self->rand_cfg);
+    for (size_t i = 0; i < self->word_lists.len; i++) {
+      struct muzzy_words *wl = muzzy_vec_get(&self->word_lists, i);
+      const char *word = muzzy_words_next(wl, rng % (int64_t)wl->list.len);
+
+      buf[0] = muzzy_word_rep(arg[0], wl->replace, word, -1);
+    }
+    buf++;
     arg++;
   }
+  return 0;
+}
+
+int muzzy_attempt_exec(struct muzzy_attempt *self) {
+  muzzy_attempt_words(self);
 
   if (self->dry) {
     return muzzy_attempt_dry(self);
@@ -60,4 +94,6 @@ int muzzy_attempt_run(struct muzzy_attempt *self) {
 
 void muzzy_attempt_free(struct muzzy_attempt *self) {
   muzzy_rand_cfg_free(&self->rand_cfg);
+  muzzy_attempt_args_buf_free(self);
+  free(self->modified_args_buf);
 }

@@ -44,8 +44,12 @@ struct muzzy_words muzzy_words_from_file(const char *path, const char *rep) {
   return self;
 }
 
+const char *muzzy_words_next(struct muzzy_words *self, int64_t i) {
+  return muzzy_vec_get(&self->list, i);
+}
+
 char *muzzy_word_rep(const char *input, const char *replace, const char *word,
-                     size_t len, ssize_t n) {
+                     ssize_t n) {
   struct muzzy_buffer buf = muzzy_buffer_init();
 
   const size_t replace_len = strlen(replace);

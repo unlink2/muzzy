@@ -25,6 +25,9 @@ struct muzzy_attempt {
 
   // array of args NULL terminated
   const char **args;
+  // dynamically created buffer for chars that
+  // were modified. NULL terminated
+  const char **modified_args_buf;
 
   struct muzzy_buffer out;
 
