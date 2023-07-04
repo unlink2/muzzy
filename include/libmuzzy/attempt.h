@@ -35,9 +35,6 @@ struct muzzy_attempt {
   // conditions (muzzy_cond)
   struct muzzy_vec cond_list;
 
-  // output calls (muzzy_out)
-  struct muzzy_vec out_list;
-
   int32_t n_runs;
   bool recursive;
   bool dry;
