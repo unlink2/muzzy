@@ -2,6 +2,7 @@
 #include "libmuzzy/buffer.h"
 #include "libmuzzy/error.h"
 #include "libmuzzy/fuzz.h"
+#include "libmuzzy/rand.h"
 #include "libmuzzy/vec.h"
 #include <limits.h>
 #include <stdio.h>
@@ -33,8 +34,8 @@ struct muzzy_attempt muzzy_attempt_from_cfg(struct muzzy_config *cfg) {
   return self;
 }
 
-void muzzy_attempt_args_buf_free(struct muzzy_attempt *self) {
-  const char **arg = self->modified_args_buf;
+void muzzy_attempt_args_buf_free(const char **modified_args_buf) {
+  const char **arg = modified_args_buf;
   while (arg[0]) {
     free((void *)arg[0]);
     arg++;
@@ -43,15 +44,17 @@ void muzzy_attempt_args_buf_free(struct muzzy_attempt *self) {
 
 int muzzy_attempt_dry(struct muzzy_attempt *self) {}
 
-int muzzy_attempt_words(struct muzzy_attempt *self) {
+int muzzy_attempt_words(struct muzzy_vec *word_lists, const char **args,
+                        const char **modified_args_buf, muzzy_rand rand,
+                        struct muzzy_rand_cfg *rand_cfg) {
   // fuzz the input
-  muzzy_attempt_args_buf_free(self);
-  const char **arg = self->args;
-  const char **buf = self->modified_args_buf;
+  muzzy_attempt_args_buf_free(modified_args_buf);
+  const char **arg = args;
+  const char **buf = modified_args_buf;
   while (arg[0]) {
-    int64_t rng = self->rand(&self->rand_cfg);
-    for (size_t i = 0; i < self->word_lists.len; i++) {
-      struct muzzy_words *wl = muzzy_vec_get(&self->word_lists, i);
+    int64_t rng = rand(&rand_cfg);
+    for (size_t i = 0; i < word_lists->len; i++) {
+      struct muzzy_words *wl = muzzy_vec_get(word_lists, i);
       const char *word = muzzy_words_next(wl, rng % (int64_t)wl->list.len);
 
       buf[0] = muzzy_word_rep(arg[0], wl->replace, word, -1);
@@ -63,7 +66,8 @@ int muzzy_attempt_words(struct muzzy_attempt *self) {
 }
 
 int muzzy_attempt_exec(struct muzzy_attempt *self) {
-  muzzy_attempt_words(self);
+  muzzy_attempt_words(&self->word_lists, self->args, self->modified_args_buf,
+                      self->rand, &self->rand_cfg);
 
   if (self->dry) {
     return muzzy_attempt_dry(self);
@@ -94,6 +98,6 @@ int muzzy_attempt_run(struct muzzy_attempt *self) {
 
 void muzzy_attempt_free(struct muzzy_attempt *self) {
   muzzy_rand_cfg_free(&self->rand_cfg);
-  muzzy_attempt_args_buf_free(self);
+  muzzy_attempt_args_buf_free(self->modified_args_buf);
   free(self->modified_args_buf);
 }
