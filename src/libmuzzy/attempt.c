@@ -1,6 +1,7 @@
 #include "libmuzzy/attempt.h"
 #include "libmuzzy/buffer.h"
 #include "libmuzzy/error.h"
+#include "libmuzzy/fuzz.h"
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
@@ -23,6 +24,13 @@ struct muzzy_attempt muzzy_attempt_from_cfg(struct muzzy_config *cfg) {
 int muzzy_attempt_dry(struct muzzy_attempt *self) {}
 
 int muzzy_attempt_exec(struct muzzy_attempt *self) {
+  // fuzz the input
+  const char *arg = self->args[0];
+  while (arg) {
+    int64_t rng = self->rand(&self->rand_cfg);
+    arg++;
+  }
+
   if (self->dry) {
     return muzzy_attempt_dry(self);
   }

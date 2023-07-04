@@ -13,16 +13,13 @@ struct muzzy_words muzzy_words_init(void) {
 
   self.list = muzzy_vec_init(sizeof(const char *));
   self.replace = MUZZY_DEFAULT_REPLACE_WORD;
-  self.separator = MUZZY_DEFAULT_SEPARATOR;
 
   return self;
 }
 
-struct muzzy_words muzzy_words_from_file(const char *path, const char *rep,
-                                         const char *sep) {
+struct muzzy_words muzzy_words_from_file(const char *path, const char *rep) {
   struct muzzy_words self = muzzy_words_init();
 
-  self.separator = sep;
   self.replace = rep;
 
   FILE *f = fopen(path, "re");
@@ -47,8 +44,8 @@ struct muzzy_words muzzy_words_from_file(const char *path, const char *rep,
   return self;
 }
 
-char *muzzy_words_rep(const char *input, const char *replace,
-                      const char **words, size_t len, ssize_t n) {
+char *muzzy_word_rep(const char *input, const char *replace, const char *word,
+                     size_t len, ssize_t n) {
   struct muzzy_buffer buf = muzzy_buffer_init();
 
   const size_t replace_len = strlen(replace);
@@ -64,12 +61,10 @@ char *muzzy_words_rep(const char *input, const char *replace,
     muzzy_buffer_adv(&buf, start_len);
 
     // copy words into buffer
-    for (size_t i = 0; i < len; i++) {
-      size_t word_len = strlen(words[i]);
-      char *w = (void *)muzzy_buffer_next(&buf, word_len);
-      memcpy(w, words[i], word_len);
-      muzzy_buffer_adv(&buf, word_len);
-    }
+    size_t word_len = strlen(word);
+    char *w = (void *)muzzy_buffer_next(&buf, word_len);
+    memcpy(w, word, word_len); // NOLINT
+    muzzy_buffer_adv(&buf, word_len);
 
     // skip remainder
     start = next + replace_len;

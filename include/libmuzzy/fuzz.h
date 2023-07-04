@@ -12,7 +12,6 @@
 struct muzzy_words {
   struct muzzy_vec list;
   const char *replace;
-  const char *separator;
 
   // this is a buffered value that is used by apply
   // to check if the buffer can hold all possible values
@@ -21,8 +20,7 @@ struct muzzy_words {
 
 struct muzzy_words muzzy_words_init(void);
 
-struct muzzy_words muzzy_words_from_file(const char *path, const char *rep,
-                                         const char *sep);
+struct muzzy_words muzzy_words_from_file(const char *path, const char *rep);
 
 // obtain a random word from the word list
 // it requires an index number that can be provided by any source
@@ -33,8 +31,8 @@ const char *muzzy_words_next(const struct muzzy_words *self, int64_t i);
 // All occurances of 'replace' are replaced with the apropriate list of words
 // If n is set to -1 all words are replaced, otherwise it will stop when no word
 // is left to replace
-char *muzzy_words_rep(const char *input, const char *replace,
-                      const char **words, size_t len, ssize_t n);
+char *muzzy_word_rep(const char *input, const char *replace, const char *word,
+                     size_t len, ssize_t n);
 
 void muzzy_words_free(struct muzzy_words *self);
 
