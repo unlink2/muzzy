@@ -28,6 +28,14 @@ struct muzzy_attempt {
   const char **args;
   size_t arg_len;
 
+  const char **args_fuzzed;
+
+  // current in-use buffer
+  struct muzzy_vec *args_buf_cur;
+  // a/b buffer of muzzy_buffers
+  struct muzzy_vec args_buf0;
+  struct muzzy_vec args_buf1;
+
   struct muzzy_buffer out;
 
   // dump out to this file
@@ -38,7 +46,7 @@ struct muzzy_attempt {
   struct muzzy_vec cond_list;
 
   int32_t n_runs;
-  bool recursive;
+  int32_t delay_ms;
   bool dry;
 };
 
@@ -51,9 +59,10 @@ struct muzzy_attempt muzzy_attempt_from_cfg(struct muzzy_config *cfg);
 // The resulting strings in modified_args_buf will be malloced and need to be
 // freed by the caller.
 // Returned modified_args_buf
-const char **muzzy_attempt_words(struct muzzy_words *words, const char **args,
-                                 size_t arg_len, muzzy_rand rand,
-                                 struct muzzy_rand_cfg *rand_cfg);
+struct muzzy_vec *muzzy_attempt_words(struct muzzy_vec *dst,
+                                      struct muzzy_vec *args,
+                                      struct muzzy_words *wl, muzzy_rand rand,
+                                      struct muzzy_rand_cfg *rand_cfg);
 
 // runs a single execution
 // run a new attempt either sync or in a thread with the attempt configuration.

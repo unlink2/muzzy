@@ -44,13 +44,18 @@ struct muzzy_words muzzy_words_from_file(const char *path, const char *rep) {
   return self;
 }
 
-const char *muzzy_words_next(struct muzzy_words *self, int64_t i) {
-  return muzzy_vec_get(&self->list, i);
-}
+const char *muzzy_words_next(const char **words, int64_t i) { return words[i]; }
 
 char *muzzy_word_rep(const char *input, const char *replace, const char *word,
-                     ssize_t n) {
-  struct muzzy_buffer buf = muzzy_buffer_init();
+
+                     ssize_t n, struct muzzy_buffer *buf) {
+  struct muzzy_buffer buf_local;
+  if (!buf) {
+    buf_local = muzzy_buffer_init();
+    buf = &buf_local;
+  } else {
+    muzzy_buffer_clear(buf);
+  }
 
   const size_t replace_len = strlen(replace);
   const char *start = input;
@@ -60,15 +65,15 @@ char *muzzy_word_rep(const char *input, const char *replace, const char *word,
   while ((next = strstr(start, replace)) && (n == -1 || n--)) {
     // copy head into buffer
     size_t start_len = next - start;
-    char *b = (void *)muzzy_buffer_next(&buf, start_len);
+    char *b = (void *)muzzy_buffer_next(buf, start_len);
     memcpy(b, start, start_len);
-    muzzy_buffer_adv(&buf, start_len);
+    muzzy_buffer_adv(buf, start_len);
 
     // copy words into buffer
     size_t word_len = strlen(word);
-    char *w = (void *)muzzy_buffer_next(&buf, word_len);
+    char *w = (void *)muzzy_buffer_next(buf, word_len);
     memcpy(w, word, word_len); // NOLINT
-    muzzy_buffer_adv(&buf, word_len);
+    muzzy_buffer_adv(buf, word_len);
 
     // skip remainder
     start = next + replace_len;
@@ -76,13 +81,13 @@ char *muzzy_word_rep(const char *input, const char *replace, const char *word,
 
   // copy tail into buffer
   size_t tail_len = end - start;
-  char *tail = (void *)muzzy_buffer_next(&buf, tail_len);
+  char *tail = (void *)muzzy_buffer_next(buf, tail_len);
   memcpy(tail, start, tail_len);
-  muzzy_buffer_adv(&buf, tail_len);
+  muzzy_buffer_adv(buf, tail_len);
 
-  muzzy_buffer_null_term(&buf);
+  muzzy_buffer_null_term(buf);
 
-  return (void *)muzzy_buffer_move(&buf);
+  return (void *)muzzy_buffer_move(buf);
 }
 
 void muzzy_words_free(struct muzzy_words *self) {

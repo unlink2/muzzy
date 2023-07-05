@@ -14,6 +14,9 @@ struct muzzy_attempt muzzy_attempt_init(void) {
   memset(&self, 0, sizeof(self));
 
   self.out = muzzy_buffer_init();
+  self.args_buf0 = muzzy_vec_init(sizeof(struct muzzy_buffer));
+  self.args_buf1 = muzzy_vec_init(sizeof(struct muzzy_buffer));
+  self.args_buf_cur = &self.args_buf0;
 
   return self;
 }
@@ -24,57 +27,50 @@ struct muzzy_attempt muzzy_attempt_from_cfg(struct muzzy_config *cfg) {
   size_t args_len = 1; // start at 1 to insert NULL in the end
   const char **arg = self.args;
   while (arg[0]) {
+    // push the right amount of buffers to the target
+    struct muzzy_buffer b0 = muzzy_buffer_init();
+    struct muzzy_buffer b1 = muzzy_buffer_init();
+    muzzy_vec_push(&self.args_buf0, &b0);
+    muzzy_vec_push(&self.args_buf1, &b1);
     arg++;
     args_len++;
   }
+
+  // result buffer used for storage of the actual pointers
+  self.args_fuzzed = malloc(sizeof(char *) * args_len + 1);
+  memset(self.args_fuzzed, 0, sizeof(char *) * args_len + 1);
+
   self.arg_len = args_len;
 
   return self;
 }
 
-void muzzy_attempt_args_buf_free(const char **modified_args_buf) {
-  const char **arg = modified_args_buf;
-  while (arg[0]) {
-    free((void *)arg[0]);
-    arg++;
-  }
-  free(modified_args_buf);
-}
-
 int muzzy_attempt_dry(struct muzzy_attempt *self) {}
 
-const char **muzzy_attempt_words(struct muzzy_words *words, const char **args,
-                                 size_t arg_len, muzzy_rand rand,
-                                 struct muzzy_rand_cfg *rand_cfg) {
+struct muzzy_vec *muzzy_attempt_words(struct muzzy_vec *dst,
+                                      struct muzzy_vec *args,
+                                      struct muzzy_words *wl, muzzy_rand rand,
+                                      struct muzzy_rand_cfg *rand_cfg) {
   // fuzz the input
-  const char **arg = args;
-  const char **buf_start = malloc(sizeof(char *) * arg_len);
-  const char **buf = buf_start;
-  while (arg[0]) {
+  for (size_t i = 0; i < args->len; i++) {
     int64_t rng = rand(&rand_cfg);
 
-    const char *word = muzzy_words_next(words, rng % (int64_t)words->list.len);
+    const char *word =
+        muzzy_words_next(wl->list.data, rng % (int64_t)wl->list.len);
 
-    // TODO: this can be improved to avoid mallocs
-    buf[0] = muzzy_word_rep(arg[0], words->replace, word, -1);
-    buf++;
-    arg++;
+    const char **arg = muzzy_vec_get(args, i);
+    struct muzzy_buffer *buf = muzzy_vec_get(dst, i);
+    muzzy_word_rep(*arg, wl->replace, word, -1, buf);
   }
-  buf[0] = NULL;
-  return buf_start;
+  return dst;
 }
 
 int muzzy_attempt_exec(struct muzzy_attempt *self) {
-  const char **args_buf = self->args;
 
   for (size_t i = 0; i < self->word_lists.len; i++) {
     struct muzzy_words *word_list = muzzy_vec_get(&self->word_lists, i);
-    const char **next = muzzy_attempt_words(word_list, args_buf, self->arg_len,
-                                            self->rand, &self->rand_cfg);
-    if (args_buf != self->args) {
-      muzzy_attempt_args_buf_free(args_buf);
-    }
-    args_buf = next;
+    muzzy_attempt_words(&self->args_buf0, &self->args_buf1, word_list,
+                        self->rand, &self->rand_cfg);
   }
 
   if (self->dry) {
@@ -83,7 +79,6 @@ int muzzy_attempt_exec(struct muzzy_attempt *self) {
 
   // TODO: exec
 
-  muzzy_attempt_args_buf_free(args_buf);
   return 0;
 }
 

@@ -60,4 +60,6 @@ void *muzzy_vec_get(struct muzzy_vec *self, size_t index) {
   return muzzy_vec_offset(self, index);
 }
 
+void muzzy_vec_clear(struct muzzy_vec *self) { self->len = 0; }
+
 void muzzy_vec_free(struct muzzy_vec *self) { free(self->data); }
