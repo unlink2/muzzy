@@ -63,6 +63,13 @@ struct muzzy_vec *muzzy_attempt_words(struct muzzy_vec *dst,
                                       struct muzzy_words *wl, muzzy_rand rand,
                                       struct muzzy_rand_cfg *rand_cfg);
 
+// converts a vec of buffers into an exec friendly list of args
+const char **muzzy_attempt_to_exec_args(const char **dst,
+                                        struct muzzy_vec *src);
+
+// places the src array in a buffer vec
+void muzzy_attempt_args_to_buffer(struct muzzy_vec *dst, const char **src);
+
 // runs a single execution
 // run a new attempt either sync or in a thread with the attempt configuration.
 // Note: Passing an attempt configuration to more than one run call is

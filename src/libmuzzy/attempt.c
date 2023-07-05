@@ -70,6 +70,44 @@ struct muzzy_vec *muzzy_attempt_words(struct muzzy_vec *dst,
   return dst;
 }
 
+void muzzy_attempt_args_to_buffer(struct muzzy_vec *dst, const char **src) {
+  size_t i = 0;
+  while (*src) {
+    struct muzzy_buffer *b = muzzy_vec_get(dst, i);
+
+    if (!b) {
+      struct muzzy_buffer nb = muzzy_buffer_init();
+      muzzy_vec_push(dst, &nb);
+      b = muzzy_vec_get(dst, i);
+    }
+
+    muzzy_buffer_clear(b);
+
+    size_t len = strlen(*src);
+    memcpy(muzzy_buffer_next(b, len), *src, len);
+    muzzy_buffer_adv(b, len);
+    muzzy_buffer_null_term(b);
+
+    src++;
+    i++;
+  }
+}
+
+const char **muzzy_attempt_to_exec_args(const char **dst,
+                                        struct muzzy_vec *src) {
+  if (dst == NULL) {
+    dst = malloc(sizeof(char *) * (src->len + 1));
+  }
+
+  for (size_t i = 0; i < src->len; i++) {
+    struct muzzy_buffer *b = muzzy_vec_get(src, i);
+    dst[i] = (const char *)b->data;
+  }
+
+  dst[src->len] = NULL;
+  return dst;
+}
+
 int muzzy_attempt_exec(struct muzzy_attempt *self) {
   struct muzzy_vec *args_buf = &self->buf0;
   struct muzzy_vec *dst_buf = &self->buf1;
