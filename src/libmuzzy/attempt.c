@@ -71,6 +71,7 @@ struct muzzy_vec *muzzy_attempt_words(struct muzzy_vec *dst,
 }
 
 void muzzy_attempt_args_to_buffer(struct muzzy_vec *dst, const char **src) {
+  muzzy_vec_clear(dst);
   size_t i = 0;
   while (*src) {
     struct muzzy_buffer *b = muzzy_vec_get(dst, i);

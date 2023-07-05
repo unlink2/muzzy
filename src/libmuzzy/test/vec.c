@@ -3,6 +3,7 @@
 #include "libmuzzy/test/vec.h"
 #include "libmuzzy/vec.h"
 #include <stdint.h>
+#include <stdio.h>
 
 void test_vec(void **state) {
   struct muzzy_vec v = muzzy_vec_init(sizeof(intptr_t));
@@ -19,7 +20,9 @@ void test_vec(void **state) {
   for (int i = 0; i < MUZZY_VEC_DEFAULT_MAX_LEN * 4; i++) {
     int *r = muzzy_vec_get(&v, i);
     assert_int_equal(0 - i, *r);
+  }
 
+  for (int i = 0; i < MUZZY_VEC_DEFAULT_MAX_LEN * 4; i++) {
     int *p = muzzy_vec_pop(&v);
     assert_non_null(p);
     assert_int_equal(MUZZY_VEC_DEFAULT_MAX_LEN * 4 - i - 1, v.len);

@@ -54,7 +54,7 @@ void *muzzy_vec_pop(struct muzzy_vec *self) {
 }
 
 void *muzzy_vec_get(struct muzzy_vec *self, size_t index) {
-  if (self->len == 0) {
+  if (self->len <= index) {
     return NULL;
   }
   return muzzy_vec_offset(self, index);
