@@ -24,17 +24,16 @@ struct muzzy_attempt {
   struct muzzy_rand_cfg rand_cfg;
   const char *executable;
 
-  // array of args NULL terminated
+  // NULL terminated input arguments
   const char **args;
-  size_t arg_len;
 
+  // NULL terminated args array that is used
+  // as an input for exec
   const char **args_fuzzed;
 
-  // current in-use buffer
-  struct muzzy_vec *args_buf_cur;
   // a/b buffer of muzzy_buffers
-  struct muzzy_vec args_buf0;
-  struct muzzy_vec args_buf1;
+  struct muzzy_vec buf0;
+  struct muzzy_vec buf1;
 
   struct muzzy_buffer out;
 

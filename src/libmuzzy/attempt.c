@@ -14,9 +14,8 @@ struct muzzy_attempt muzzy_attempt_init(void) {
   memset(&self, 0, sizeof(self));
 
   self.out = muzzy_buffer_init();
-  self.args_buf0 = muzzy_vec_init(sizeof(struct muzzy_buffer));
-  self.args_buf1 = muzzy_vec_init(sizeof(struct muzzy_buffer));
-  self.args_buf_cur = &self.args_buf0;
+  self.buf0 = muzzy_vec_init(sizeof(struct muzzy_buffer));
+  self.buf1 = muzzy_vec_init(sizeof(struct muzzy_buffer));
 
   return self;
 }
@@ -30,17 +29,16 @@ struct muzzy_attempt muzzy_attempt_from_cfg(struct muzzy_config *cfg) {
     // push the right amount of buffers to the target
     struct muzzy_buffer b0 = muzzy_buffer_init();
     struct muzzy_buffer b1 = muzzy_buffer_init();
-    muzzy_vec_push(&self.args_buf0, &b0);
-    muzzy_vec_push(&self.args_buf1, &b1);
+
+    muzzy_vec_push(&self.buf0, &b0);
+    muzzy_vec_push(&self.buf1, &b1);
+
     arg++;
-    args_len++;
   }
 
   // result buffer used for storage of the actual pointers
   self.args_fuzzed = malloc(sizeof(char *) * args_len + 1);
   memset(self.args_fuzzed, 0, sizeof(char *) * args_len + 1);
-
-  self.arg_len = args_len;
 
   return self;
 }
@@ -60,17 +58,31 @@ struct muzzy_vec *muzzy_attempt_words(struct muzzy_vec *dst,
 
     const char **arg = muzzy_vec_get(args, i);
     struct muzzy_buffer *buf = muzzy_vec_get(dst, i);
+
+    if (!buf) {
+      struct muzzy_buffer b = muzzy_buffer_init();
+      muzzy_vec_push(dst, &b);
+      buf = muzzy_vec_get(dst, i);
+    }
+
     muzzy_word_rep(*arg, wl->replace, word, -1, buf);
   }
   return dst;
 }
 
 int muzzy_attempt_exec(struct muzzy_attempt *self) {
+  struct muzzy_vec *args_buf = &self->buf0;
+  struct muzzy_vec *dst_buf = &self->buf1;
 
   for (size_t i = 0; i < self->word_lists.len; i++) {
     struct muzzy_words *word_list = muzzy_vec_get(&self->word_lists, i);
-    muzzy_attempt_words(&self->args_buf0, &self->args_buf1, word_list,
-                        self->rand, &self->rand_cfg);
+    muzzy_attempt_words(dst_buf, args_buf, word_list, self->rand,
+                        &self->rand_cfg);
+
+    // swap for next iteration
+    struct muzzy_vec *tmp = args_buf;
+    args_buf = dst_buf;
+    dst_buf = tmp;
   }
 
   if (self->dry) {
@@ -78,6 +90,8 @@ int muzzy_attempt_exec(struct muzzy_attempt *self) {
   }
 
   // TODO: exec
+
+  // swap buffers for next iteration
 
   return 0;
 }
@@ -102,5 +116,9 @@ int muzzy_attempt_run(struct muzzy_attempt *self) {
 }
 
 void muzzy_attempt_free(struct muzzy_attempt *self) {
+  // TODO: free buffers
+
   muzzy_rand_cfg_free(&self->rand_cfg);
+
+  free(self->args_fuzzed);
 }
