@@ -6,6 +6,7 @@
 #include "libmuzzy/rand.h"
 #include "libmuzzy/vec.h"
 #include "libmuzzy/buffer.h"
+#include "libmuzzy/fuzz.h"
 #include <stdio.h>
 
 #define MUZZY_DEFAULT_EXECUTABLE "/bin/sh"
@@ -25,9 +26,7 @@ struct muzzy_attempt {
 
   // array of args NULL terminated
   const char **args;
-  // dynamically created buffer for chars that
-  // were modified. NULL terminated
-  const char **modified_args_buf;
+  size_t arg_len;
 
   struct muzzy_buffer out;
 
@@ -46,6 +45,15 @@ struct muzzy_attempt {
 struct muzzy_attempt muzzy_attempt_init(void);
 
 struct muzzy_attempt muzzy_attempt_from_cfg(struct muzzy_config *cfg);
+
+// inserts random words into args (NULL terminated string array)
+// and stores it in modified_args_buf (NULL terminated string array)
+// The resulting strings in modified_args_buf will be malloced and need to be
+// freed by the caller.
+// Returned modified_args_buf
+const char **muzzy_attempt_words(struct muzzy_words *words, const char **args,
+                                 size_t arg_len, muzzy_rand rand,
+                                 struct muzzy_rand_cfg *rand_cfg);
 
 // runs a single execution
 // run a new attempt either sync or in a thread with the attempt configuration.
