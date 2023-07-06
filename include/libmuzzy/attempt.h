@@ -67,6 +67,18 @@ struct muzzy_vec *muzzy_attempt_words(struct muzzy_vec *dst,
 const char **muzzy_attempt_to_exec_args(const char **dst,
                                         struct muzzy_vec *src);
 
+// applies the fuzzer to args by going through all word lists for each arg in
+// args args_fuzzed is a list of strings the same size as args where the result
+// will be stored buf0 and buf1 are double buffers that are used to process the
+// fuzzing they can be provided to avoid mallocs where possible returns
+// args_fuzzed
+const char **muzzy_attempt_fuzz_args(const char **args_fuzzed,
+                                     const char **args,
+                                     struct muzzy_vec *word_lists,
+                                     struct muzzy_vec *buf0,
+                                     struct muzzy_vec *buf1, muzzy_rand rand,
+                                     struct muzzy_rand_cfg *rand_cfg);
+
 // places the src array in a buffer vec
 void muzzy_attempt_args_to_buffer(struct muzzy_vec *dst, const char **src);
 

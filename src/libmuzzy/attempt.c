@@ -109,20 +109,35 @@ const char **muzzy_attempt_to_exec_args(const char **dst,
   return dst;
 }
 
-int muzzy_attempt_exec(struct muzzy_attempt *self) {
-  struct muzzy_vec *args_buf = &self->buf0;
-  struct muzzy_vec *dst_buf = &self->buf1;
+const char **muzzy_attempt_fuzz_args(const char **args_fuzzed,
+                                     const char **args,
+                                     struct muzzy_vec *word_lists,
+                                     struct muzzy_vec *buf0,
+                                     struct muzzy_vec *buf1, muzzy_rand rand,
+                                     struct muzzy_rand_cfg *rand_cfg) {
+  struct muzzy_vec *args_buf = buf0;
+  struct muzzy_vec *dst_buf = buf1;
 
-  for (size_t i = 0; i < self->word_lists.len; i++) {
-    struct muzzy_words *word_list = muzzy_vec_get(&self->word_lists, i);
-    muzzy_attempt_words(dst_buf, args_buf, word_list, self->rand,
-                        &self->rand_cfg);
+  // move source args to buffer
+  muzzy_attempt_args_to_buffer(args_buf, args);
+  for (size_t i = 0; i < word_lists->len; i++) {
+    struct muzzy_words *word_list = muzzy_vec_get(word_lists, i);
+    muzzy_attempt_words(dst_buf, args_buf, word_list, rand, rand_cfg);
 
     // swap for next iteration
     struct muzzy_vec *tmp = args_buf;
     args_buf = dst_buf;
     dst_buf = tmp;
   }
+  // move buffer back to fuzzed args
+  muzzy_attempt_to_exec_args(args_fuzzed, args_buf);
+  return args_fuzzed;
+}
+
+int muzzy_attempt_exec(struct muzzy_attempt *self) {
+  const char **args_fuzzed = muzzy_attempt_fuzz_args(
+      self->args_fuzzed, self->args, &self->word_lists, &self->buf0,
+      &self->buf1, self->rand, &self->rand_cfg);
 
   if (self->dry) {
     return muzzy_attempt_dry(self);
