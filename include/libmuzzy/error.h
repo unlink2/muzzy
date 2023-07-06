@@ -24,6 +24,7 @@
 // Some may or may not require special error info
 enum muzzy_error {
   MUZZY_OK = 0,
+  MUZZY_ERR_LIST_LEN_ZERO,
   // errno is stored in err_detail
   MUZZY_ERRNO
 };

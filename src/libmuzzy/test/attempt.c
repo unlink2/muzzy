@@ -34,8 +34,11 @@ void test_attempt_words(void **state) {
   muzzy_attempt_words(&dst, &args, &words, rand_test, NULL);
   const char **res = muzzy_attempt_to_exec_args(NULL, &dst);
 
+  assert_non_null(res);
+  assert_false(muzzy_err());
   assert_string_equal("Test Test1 123", res[0]);
   assert_string_equal("Arg2 Test1 123", res[1]);
+  assert_null(res[2]);
 
   free(res);
   muzzy_attempt_free(&a);
@@ -66,22 +69,25 @@ void test_attempt_fuzz_args(void **state) {
   words2.replace = "R2";
 
   char *s4 = strdup("Test3");
-  muzzy_vec_push(&words1.list, &s4);
+  muzzy_vec_push(&words2.list, &s4);
   char *s5 = strdup("Test4");
-  muzzy_vec_push(&words1.list, &s5);
+  muzzy_vec_push(&words2.list, &s5);
   char *s6 = strdup("Test5");
-  muzzy_vec_push(&words1.list, &s6);
+  muzzy_vec_push(&words2.list, &s6);
 
   muzzy_vec_push(&words, &words1);
   muzzy_vec_push(&words, &words2);
 
-  const char *args[] = {"Test R1 123", "Arg2 R1 123", NULL};
+  const char *args[] = {"Test R1 123 R2", "Arg2 R1 123 R2", NULL};
 
   const char **res = muzzy_attempt_fuzz_args(NULL, args, &words, &buf0, &buf1,
                                              rand_test, NULL);
 
-  assert_string_equal("Test Test1 123", res[0]);
-  assert_string_equal("Arg2 Test1 123", res[1]);
+  assert_non_null(res);
+  assert_false(muzzy_err());
+  assert_string_equal("Test Test1 123 Test4", res[0]);
+  assert_string_equal("Arg2 Test1 123 Test4", res[1]);
+  assert_null(res[2]);
 
   free(res);
   muzzy_buf_vec_free(&buf0);
