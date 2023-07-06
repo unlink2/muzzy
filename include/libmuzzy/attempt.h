@@ -12,6 +12,7 @@
 #define MUZZY_DEFAULT_EXECUTABLE "/bin/sh"
 #define MUZZY_DEFAULT_EXECUTABLE_ARG0 "-c"
 #define MUZZY_DEFAULT_EXECUTABLE_ENV "/usr/bin/env"
+#define MUZZY_COND_OUT_LEN 16
 
 // an attempt is the execution enviornment for a fuzzer
 // execute the fuzzer based in all word lists,
@@ -35,6 +36,7 @@ struct muzzy_attempt {
   struct muzzy_vec buf0;
   struct muzzy_vec buf1;
 
+  const char cond_out[MUZZY_COND_OUT_LEN];
   struct muzzy_buffer out;
 
   // dump out to this file

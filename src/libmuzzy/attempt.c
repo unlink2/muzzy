@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 struct muzzy_attempt muzzy_attempt_init(void) {
   struct muzzy_attempt self;
@@ -42,8 +43,6 @@ struct muzzy_attempt muzzy_attempt_from_cfg(struct muzzy_config *cfg) {
 
   return self;
 }
-
-int muzzy_attempt_dry(struct muzzy_attempt *self) {}
 
 struct muzzy_vec *muzzy_attempt_words(struct muzzy_vec *dst,
                                       struct muzzy_vec *args,
@@ -150,12 +149,16 @@ int muzzy_attempt_exec(struct muzzy_attempt *self) {
   }
 
   if (self->dry) {
-    return muzzy_attempt_dry(self);
+    const char **arg = args_fuzzed;
+    while (*arg) {
+      size_t len = strlen(*arg);
+      memcpy(muzzy_buffer_next(&self->out, len), *arg, len);
+      muzzy_buffer_adv(&self->out, len);
+    }
+    muzzy_buffer_null_term(&self->out);
+  } else {
+    // TODO: exec
   }
-
-  // TODO: exec
-
-  // swap buffers for next iteration
 
   return 0;
 }
@@ -175,6 +178,9 @@ int muzzy_attempt_run(struct muzzy_attempt *self) {
   // condition
 
   // output
+  fwrite(self->cond_out, 1, MUZZY_COND_OUT_LEN, self->out_to);
+  fwrite(muzzy_buffer_start(&self->out), 1, muzzy_buffer_len(&self->out),
+         self->out_to);
 
   return act_exit_code;
 }
