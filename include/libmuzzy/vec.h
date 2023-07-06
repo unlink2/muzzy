@@ -22,5 +22,7 @@ void *muzzy_vec_get(struct muzzy_vec *self, size_t index);
 void muzzy_vec_clear(struct muzzy_vec *self);
 
 void muzzy_vec_free(struct muzzy_vec *self);
+void muzzy_buf_vec_free(struct muzzy_vec *self);
+void muzzy_words_vec_free(struct muzzy_vec *self);
 
 #endif

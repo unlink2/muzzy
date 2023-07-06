@@ -170,15 +170,8 @@ int muzzy_attempt_run(struct muzzy_attempt *self) {
 }
 
 void muzzy_attempt_free(struct muzzy_attempt *self) {
-  for (size_t i = 0; i < self->buf0.len; i++) {
-    muzzy_buffer_free(muzzy_vec_get(&self->buf0, i));
-  }
-  muzzy_vec_free(&self->buf0);
-
-  for (size_t i = 0; i < self->buf1.len; i++) {
-    muzzy_buffer_free(muzzy_vec_get(&self->buf1, i));
-  }
-  muzzy_vec_free(&self->buf1);
+  muzzy_buf_vec_free(&self->buf0);
+  muzzy_buf_vec_free(&self->buf1);
 
   muzzy_rand_cfg_free(&self->rand_cfg);
   muzzy_buffer_free(&self->out);

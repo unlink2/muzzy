@@ -39,16 +39,52 @@ void test_attempt_words(void **state) {
 
   free(res);
   muzzy_attempt_free(&a);
-
-  for (size_t i = 0; i < dst.len; i++) {
-    muzzy_buffer_free(muzzy_vec_get(&dst, i));
-  }
-  muzzy_vec_free(&dst);
-
-  for (size_t i = 0; i < args.len; i++) {
-    muzzy_buffer_free(muzzy_vec_get(&args, i));
-  }
-  muzzy_vec_free(&args);
-
+  muzzy_buf_vec_free(&dst);
+  muzzy_buf_vec_free(&args);
   muzzy_words_free(&words);
+}
+
+void test_attempt_fuzz_args(void **state) {
+  struct muzzy_vec buf0 = muzzy_vec_init(sizeof(struct muzzy_buffer));
+  struct muzzy_vec buf1 = muzzy_vec_init(sizeof(struct muzzy_buffer));
+
+  struct muzzy_vec words = muzzy_vec_init(sizeof(struct muzzy_words));
+
+  // word list 1
+  struct muzzy_words words1 = muzzy_words_init();
+  words1.replace = "R1";
+
+  char *s1 = strdup("Test0");
+  muzzy_vec_push(&words1.list, &s1);
+  char *s2 = strdup("Test1");
+  muzzy_vec_push(&words1.list, &s2);
+  char *s3 = strdup("Test2");
+  muzzy_vec_push(&words1.list, &s3);
+
+  // word list 2
+  struct muzzy_words words2 = muzzy_words_init();
+  words2.replace = "R2";
+
+  char *s4 = strdup("Test3");
+  muzzy_vec_push(&words1.list, &s4);
+  char *s5 = strdup("Test4");
+  muzzy_vec_push(&words1.list, &s5);
+  char *s6 = strdup("Test5");
+  muzzy_vec_push(&words1.list, &s6);
+
+  muzzy_vec_push(&words, &words1);
+  muzzy_vec_push(&words, &words2);
+
+  const char *args[] = {"Test R1 123", "Arg2 R1 123", NULL};
+
+  const char **res = muzzy_attempt_fuzz_args(NULL, args, &words, &buf0, &buf1,
+                                             rand_test, NULL);
+
+  assert_string_equal("Test Test1 123", res[0]);
+  assert_string_equal("Arg2 Test1 123", res[1]);
+
+  free(res);
+  muzzy_buf_vec_free(&buf0);
+  muzzy_buf_vec_free(&buf1);
+  muzzy_words_vec_free(&words);
 }

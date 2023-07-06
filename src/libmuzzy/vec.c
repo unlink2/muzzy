@@ -1,5 +1,7 @@
 #include "libmuzzy/vec.h"
+#include "libmuzzy/buffer.h"
 #include "libmuzzy/error.h"
+#include "libmuzzy/fuzz.h"
 #include "libmuzzy/macros.h"
 #include "libmuzzy/log.h"
 #include <stdlib.h>
@@ -63,3 +65,19 @@ void *muzzy_vec_get(struct muzzy_vec *self, size_t index) {
 void muzzy_vec_clear(struct muzzy_vec *self) { self->len = 0; }
 
 void muzzy_vec_free(struct muzzy_vec *self) { free(self->data); }
+
+void muzzy_buf_vec_free(struct muzzy_vec *self) {
+  for (size_t i = 0; i < self->len; i++) {
+    muzzy_buffer_free(muzzy_vec_get(self, i));
+  }
+
+  muzzy_vec_free(self);
+}
+
+void muzzy_words_vec_free(struct muzzy_vec *self) {
+  for (size_t i = 0; i < self->len; i++) {
+    muzzy_words_free(muzzy_vec_get(self, i));
+  }
+
+  muzzy_vec_free(self);
+}

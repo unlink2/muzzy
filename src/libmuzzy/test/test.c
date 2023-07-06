@@ -10,6 +10,7 @@ int main(int arc, char **argv) {
       cmocka_unit_test(test_buffer),
       cmocka_unit_test(test_fuzz),
       cmocka_unit_test(test_attempt_words),
+      cmocka_unit_test(test_attempt_fuzz_args),
   };
 
   return cmocka_run_group_tests(tests, NULL, NULL);
