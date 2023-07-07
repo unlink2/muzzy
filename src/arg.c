@@ -1,11 +1,21 @@
 #include "arg.h"
 #include "libmuzzy/config.h"
 #include "libmuzzy/log.h"
+#include <argtable2.h>
 
 struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
   struct arg_lit *verb = NULL;
   struct arg_lit *help = NULL;
   struct arg_lit *version = NULL;
+
+  struct arg_file *words = NULL;
+  struct arg_str *replace = NULL;
+  struct arg_lit *no_sh = NULL;
+  struct arg_int *delay_ms = NULL;
+  struct arg_lit *stdrand = NULL;
+  struct arg_int *seed_rand = NULL;
+  struct arg_int *n_runs = NULL;
+  struct arg_file *rand_file = NULL;
 
   // arg end stores errors
   struct arg_end *end = NULL;
@@ -15,6 +25,23 @@ struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
       version =
           arg_litn(NULL, "version", 0, 1, "display version info and exit"),
       verb = arg_litn("v", "verbose", 0, MUZZY_LOG_LEVEL_DBG, "verbose output"),
+
+      words = arg_file0("w", "words", "word list", "Read a word list file"),
+      replace = arg_str0(
+          "r", "replace", "replace string",
+          "Add a replace string. These are read in order for each word list."),
+
+      no_sh =
+          arg_lit0(NULL, "nosh",
+                   "Execute command directly instead of through '/bin/sh -c'."),
+      delay_ms = arg_int0(NULL, "delay", "MS", "Delay between attempts in ms."),
+      stdrand = arg_lit0(NULL, "stdrand", "Use built-in rand instead."),
+      seed_rand = arg_int0(NULL, "seed", "INT", "Seed the built-in rand."),
+      n_runs = arg_int0("n", "nruns", "INT", "Amount of attempts to run"),
+      rand_file = arg_file0(NULL, "frand", "FILE",
+                            "The file to read from as a source of randomness. "
+                            "Defaults to '/dev/urandom'."),
+
       end = arg_end(20),
   };
 

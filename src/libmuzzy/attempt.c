@@ -50,14 +50,11 @@ struct muzzy_vec *muzzy_attempt_words(struct muzzy_vec *dst,
                                       struct muzzy_rand_cfg *rand_cfg) {
   // fuzz the input
   for (size_t i = 0; i < args->len; i++) {
-    int64_t rng = rand(&rand_cfg);
 
     if (wl->list.len == 0) {
       muzzy_err_set(MUZZY_ERR_LIST_LEN_ZERO);
       return dst;
     }
-    const char *word =
-        muzzy_words_next(wl->list.data, rng % (int64_t)wl->list.len);
 
     const char **arg = muzzy_vec_get(args, i);
     struct muzzy_buffer *buf = muzzy_vec_get(dst, i);
@@ -68,7 +65,8 @@ struct muzzy_vec *muzzy_attempt_words(struct muzzy_vec *dst,
       buf = muzzy_vec_get(dst, i);
     }
 
-    muzzy_word_rep(*arg, wl->replace, word, -1, buf);
+    muzzy_word_rep_rand(*arg, wl->replace, wl->list.data, wl->list.len, -1,
+                        rand, rand_cfg, buf);
   }
   return dst;
 }
@@ -191,6 +189,10 @@ void muzzy_attempt_free(struct muzzy_attempt *self) {
 
   muzzy_rand_cfg_free(&self->rand_cfg);
   muzzy_buffer_free(&self->out);
+
+  for (size_t i = 0; i < self->word_lists.len; i++) {
+    muzzy_words_free(muzzy_vec_get(&self->word_lists, i));
+  }
 
   free(self->args_fuzzed);
 }

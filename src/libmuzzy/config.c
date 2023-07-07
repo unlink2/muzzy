@@ -7,3 +7,5 @@ struct muzzy_config muzzy_config_init(void) {
 
   return c;
 }
+
+void muzzy_config_free(struct muzzy_config *self) {}

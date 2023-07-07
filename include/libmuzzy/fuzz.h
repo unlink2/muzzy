@@ -1,6 +1,7 @@
 #ifndef FUZZ_H_
 #define FUZZ_H_
 
+#include "libmuzzy/rand.h"
 #include "libmuzzy/vec.h"
 #include "libmuzzy/buffer.h"
 #include <stdint.h>
@@ -34,6 +35,10 @@ const char *muzzy_words_next(const char **words, int64_t i);
 // is left to replace
 char *muzzy_word_rep(const char *input, const char *replace, const char *word,
                      ssize_t n, struct muzzy_buffer *buf);
+char *muzzy_word_rep_rand(const char *input, const char *replace,
+                          const char **words, size_t words_len, ssize_t n,
+                          muzzy_rand rand, struct muzzy_rand_cfg *rand_cfg,
+                          struct muzzy_buffer *buf);
 
 void muzzy_words_free(struct muzzy_words *self);
 

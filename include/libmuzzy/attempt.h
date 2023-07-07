@@ -14,6 +14,9 @@
 #define MUZZY_DEFAULT_EXECUTABLE_ENV "/usr/bin/env"
 #define MUZZY_COND_OUT_LEN 16
 
+#define MUZZY_N_RUNS_INF -1
+#define MUZZY_DEFAULT_RAND_FILE "/dev/urandom"
+
 // an attempt is the execution enviornment for a fuzzer
 // execute the fuzzer based in all word lists,
 // run the command provided and apply all comparisons

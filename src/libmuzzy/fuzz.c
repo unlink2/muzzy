@@ -2,6 +2,7 @@
 #include "libmuzzy/buffer.h"
 #include "libmuzzy/error.h"
 #include "libmuzzy/macros.h"
+#include "libmuzzy/rand.h"
 #include "libmuzzy/vec.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -46,9 +47,18 @@ struct muzzy_words muzzy_words_from_file(const char *path, const char *rep) {
 
 const char *muzzy_words_next(const char **words, int64_t i) { return words[i]; }
 
-char *muzzy_word_rep(const char *input, const char *replace, const char *word,
+int64_t muzzy_rand_always0(void *data) { return 0; }
 
+char *muzzy_word_rep(const char *input, const char *replace, const char *word,
                      ssize_t n, struct muzzy_buffer *buf) {
+  return muzzy_word_rep_rand(input, replace, (const char *[]){word}, 1, n,
+                             muzzy_rand_always0, NULL, buf);
+}
+
+char *muzzy_word_rep_rand(const char *input, const char *replace,
+                          const char **words, size_t words_len, ssize_t n,
+                          muzzy_rand rand, struct muzzy_rand_cfg *rand_cfg,
+                          struct muzzy_buffer *buf) {
   struct muzzy_buffer buf_local;
   if (!buf) {
     buf_local = muzzy_buffer_init();
@@ -68,6 +78,10 @@ char *muzzy_word_rep(const char *input, const char *replace, const char *word,
     char *b = (void *)muzzy_buffer_next(buf, start_len);
     memcpy(b, start, start_len);
     muzzy_buffer_adv(buf, start_len);
+
+    // select word
+    int64_t rng = rand(&rand_cfg);
+    const char *word = words[rng % (int64_t)words_len];
 
     // copy words into buffer
     size_t word_len = strlen(word);
