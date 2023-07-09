@@ -2,6 +2,7 @@
 #include "libmuzzy/config.h"
 #include "libmuzzy/log.h"
 #include <argtable2.h>
+#include <limits.h>
 
 struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
   struct arg_lit *verb = NULL;
@@ -16,6 +17,8 @@ struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
   struct arg_int *seed_rand = NULL;
   struct arg_int *n_runs = NULL;
   struct arg_file *rand_file = NULL;
+
+  struct arg_str *command = NULL;
 
   // arg end stores errors
   struct arg_end *end = NULL;
@@ -42,6 +45,7 @@ struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
                             "The file to read from as a source of randomness. "
                             "Defaults to '/dev/urandom'."),
 
+      command = arg_strn(NULL, NULL, "", 1, 4096, "The command to execute"),
       end = arg_end(20),
   };
 
@@ -88,6 +92,13 @@ struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
   struct muzzy_config cfg = muzzy_config_init();
 
   // map args to cfg data here
+
+  // map command to run here
+  if (no_sh->count) {
+
+  } else {
+  }
+
   arg_freetable(argtable, sizeof(argtable) / sizeof(argtable[0]));
 
   return cfg;
