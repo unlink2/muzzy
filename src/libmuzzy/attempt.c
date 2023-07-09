@@ -1,5 +1,6 @@
 #include "libmuzzy/attempt.h"
 #include "libmuzzy/buffer.h"
+#include "libmuzzy/config.h"
 #include "libmuzzy/error.h"
 #include "libmuzzy/fuzz.h"
 #include "libmuzzy/rand.h"
@@ -23,9 +24,10 @@ struct muzzy_attempt muzzy_attempt_init(void) {
 
 struct muzzy_attempt muzzy_attempt_from_cfg(struct muzzy_config *cfg) {
   struct muzzy_attempt self = muzzy_attempt_init();
+  self.args = cfg->args;
 
   size_t args_len = 1; // start at 1 to insert NULL in the end
-  const char **arg = self.args;
+  const char **arg = cfg->args;
   while (arg[0]) {
     // push the right amount of buffers to the target
     struct muzzy_buffer b0 = muzzy_buffer_init();
@@ -35,11 +37,28 @@ struct muzzy_attempt muzzy_attempt_from_cfg(struct muzzy_config *cfg) {
     muzzy_vec_push(&self.buf1, &b1);
 
     arg++;
+    args_len++;
   }
 
   // result buffer used for storage of the actual pointers
   self.args_fuzzed = malloc(sizeof(char *) * args_len + 1);
   memset(self.args_fuzzed, 0, sizeof(char *) * args_len + 1);
+
+  self.n_runs = cfg->n_runs;
+  self.delay_ms = cfg->delay_ms;
+  self.rand_cfg = cfg->rand_cfg;
+  self.rand = cfg->rand;
+  self.dry = cfg->dry;
+
+  if (strcmp(MUZZY_STDSTREAM_PATH, cfg->out_path) == 0) {
+    self.out_to = stdout;
+  } else {
+    self.out_to = fopen(cfg->out_path, "w");
+  }
+
+  if (!self.out_to) {
+    muzzy_errno();
+  }
 
   return self;
 }
@@ -192,6 +211,10 @@ void muzzy_attempt_free(struct muzzy_attempt *self) {
 
   for (size_t i = 0; i < self->word_lists.len; i++) {
     muzzy_words_free(muzzy_vec_get(&self->word_lists, i));
+  }
+
+  if (self->out_to != stdout) {
+    fclose(self->out_to);
   }
 
   free(self->args_fuzzed);

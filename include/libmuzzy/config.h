@@ -5,6 +5,8 @@
 #include "libmuzzy/rand.h"
 #include "libmuzzy/vec.h"
 
+#define MUZZY_STDSTREAM_PATH "-"
+
 struct muzzy_config {
   const char **args;
   const char *prg;
@@ -17,6 +19,8 @@ struct muzzy_config {
   bool dry;
   int32_t delay_ms;
   int32_t n_runs;
+
+  const char *out_path;
 };
 
 struct muzzy_config muzzy_config_init(void);

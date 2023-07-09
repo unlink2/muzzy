@@ -1,5 +1,6 @@
 #include "libmuzzy/fuzz.h"
 #include "libmuzzy/buffer.h"
+#include "libmuzzy/config.h"
 #include "libmuzzy/error.h"
 #include "libmuzzy/macros.h"
 #include "libmuzzy/rand.h"
@@ -23,7 +24,12 @@ struct muzzy_words muzzy_words_from_file(const char *path, const char *rep) {
 
   self.replace = rep;
 
-  FILE *f = fopen(path, "re");
+  FILE *f = NULL;
+  if (strcmp(MUZZY_STDSTREAM_PATH, path) == 0) {
+    f = stdin;
+  } else {
+    f = fopen(path, "re");
+  }
 
   if (!f) {
     muzzy_errno();
@@ -40,7 +46,9 @@ struct muzzy_words muzzy_words_from_file(const char *path, const char *rep) {
 
   free(line_buf);
 
-  fclose(f);
+  if (f != stdin) {
+    fclose(f);
+  }
 
   return self;
 }

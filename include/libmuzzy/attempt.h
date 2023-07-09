@@ -15,6 +15,7 @@
 #define MUZZY_COND_OUT_LEN 16
 
 #define MUZZY_N_RUNS_INF -1
+#define MUZZY_DEFAULT_DELAY_MS 0
 #define MUZZY_DEFAULT_RAND_FILE "/dev/urandom"
 
 // an attempt is the execution enviornment for a fuzzer

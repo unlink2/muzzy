@@ -4,8 +4,10 @@
 #include "libmuzzy/config.h"
 #include "libmuzzy/fuzz.h"
 #include "libmuzzy/log.h"
+#include "libmuzzy/rand.h"
 #include <argtable2.h>
 #include <limits.h>
+#include <stdlib.h>
 #include <string.h>
 
 struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
@@ -21,6 +23,9 @@ struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
   struct arg_int *seed_rand = NULL;
   struct arg_int *n_runs = NULL;
   struct arg_file *rand_file = NULL;
+  struct arg_lit *dry = NULL;
+
+  struct arg_file *output = NULL;
 
   struct arg_str *command = NULL;
 
@@ -48,6 +53,9 @@ struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
       rand_file = arg_file0(NULL, "frand", "FILE",
                             "The file to read from as a source of randomness. "
                             "Defaults to '/dev/urandom'."),
+
+      dry = arg_lit0(NULL, "dry", "Run without executing an actual command"),
+      output = arg_file0("o", "output", "FILE", "Output file"),
 
       command = arg_strn(NULL, NULL, "", 1, 4096, "The command to execute"),
       end = arg_end(20),
@@ -141,6 +149,44 @@ struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
               words->filename[i], rep_word);
     struct muzzy_words n = muzzy_words_from_file(words->filename[i], rep_word);
     muzzy_vec_push(&cfg.word_lists, &n);
+  }
+
+  if (delay_ms->count) {
+    cfg.delay_ms = delay_ms->ival[delay_ms->count - 1];
+  } else {
+    cfg.delay_ms = MUZZY_DEFAULT_DELAY_MS;
+  }
+
+  if (n_runs->count) {
+    cfg.n_runs = n_runs->ival[n_runs->count - 1];
+  } else {
+    cfg.n_runs = MUZZY_N_RUNS_INF;
+  }
+
+  if (stdrand->count) {
+    cfg.rand = muzzy_stdrand;
+    cfg.rand_cfg = muzzy_rand_cfg_init();
+  } else {
+    cfg.rand = muzzy_frand;
+
+    if (rand_file->count) {
+      cfg.rand_cfg =
+          muzzy_rand_cfg_file(rand_file->filename[rand_file->count - 1]);
+    } else {
+      cfg.rand_cfg = muzzy_rand_cfg_file(MUZZY_DEFAULT_RAND_FILE);
+    }
+  }
+
+  if (seed_rand->count) {
+    srand(seed_rand->ival[seed_rand->count - 1]);
+  }
+
+  cfg.dry = dry->count > 0;
+
+  if (output->count) {
+    cfg.out_path = output->filename[output->count - 1];
+  } else {
+    cfg.out_path = MUZZY_STDSTREAM_PATH;
   }
 
   arg_freetable(argtable, sizeof(argtable) / sizeof(argtable[0]));
