@@ -1,8 +1,12 @@
 #include "arg.h"
+#include "libmuzzy/attempt.h"
+#include "libmuzzy/buffer.h"
 #include "libmuzzy/config.h"
+#include "libmuzzy/fuzz.h"
 #include "libmuzzy/log.h"
 #include <argtable2.h>
 #include <limits.h>
+#include <string.h>
 
 struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
   struct arg_lit *verb = NULL;
@@ -29,7 +33,7 @@ struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
           arg_litn(NULL, "version", 0, 1, "display version info and exit"),
       verb = arg_litn("v", "verbose", 0, MUZZY_LOG_LEVEL_DBG, "verbose output"),
 
-      words = arg_file0("w", "words", "word list", "Read a word list file"),
+      words = arg_file1("w", "words", "word list", "Read a word list file"),
       replace = arg_str0(
           "r", "replace", "replace string",
           "Add a replace string. These are read in order for each word list."),
@@ -95,8 +99,48 @@ struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
 
   // map command to run here
   if (no_sh->count) {
-
+    // use env as arg value
+    size_t len = sizeof(char *) * (command->count + 3);
+    cfg.args = malloc(len);
+    memset(cfg.args, 0, len);
+    for (size_t i = 0; i < command->count; i++) {
+      cfg.args[i] = strdup(command->sval[i]);
+    }
+    cfg.prg = strdup(MUZZY_DEFAULT_EXECUTABLE_ENV);
   } else {
+    // use sh and combine all args into a single statement
+    size_t len = sizeof(char *) * 4; // sh -c 'command str' NULL
+    cfg.args = malloc(len);
+    memset(cfg.args, 0, len);
+
+    cfg.args[0] = strdup(command->sval[0]);
+    cfg.args[1] = strdup(MUZZY_DEFAULT_EXECUTABLE_ARG1);
+    cfg.args[2] =
+        (const char *)muzzy_buffer_cat(' ', command->sval, command->count);
+
+    cfg.prg = strdup(MUZZY_DEFAULT_EXECUTABLE);
+  }
+
+  // dbg output for args and prg
+  const char **arg = cfg.args;
+  muzzy_dbg("Prg: '%s' ", cfg.prg);
+  while (arg[0]) {
+    muzzy_dbg(" %s", arg[0]);
+    arg++;
+  }
+  muzzy_dbg("\n");
+
+  // set up word lists
+  for (size_t i = 0; i < words->count; i++) {
+    const char *rep_word = MUZZY_DEFAULT_REPLACE_WORD;
+    if (i < replace->count) {
+      rep_word = replace->sval[i];
+    }
+
+    muzzy_dbg("Reading word list from '%s' with keyword: '%s'\n",
+              words->filename[i], rep_word);
+    struct muzzy_words n = muzzy_words_from_file(words->filename[i], rep_word);
+    muzzy_vec_push(&cfg.word_lists, &n);
   }
 
   arg_freetable(argtable, sizeof(argtable) / sizeof(argtable[0]));

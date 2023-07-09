@@ -8,8 +8,6 @@
 #include <stdio.h>
 
 #define MUZZY_DEFAULT_REPLACE_WORD "FUZZ"
-#define MUZZY_DEFAULT_SEPARATOR ""
-#define MUZZY_PATH_SEPARATOR ':'
 
 struct muzzy_words {
   struct muzzy_vec list;

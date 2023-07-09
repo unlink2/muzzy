@@ -10,7 +10,7 @@
 #include <stdio.h>
 
 #define MUZZY_DEFAULT_EXECUTABLE "/bin/sh"
-#define MUZZY_DEFAULT_EXECUTABLE_ARG0 "-c"
+#define MUZZY_DEFAULT_EXECUTABLE_ARG1 "-c"
 #define MUZZY_DEFAULT_EXECUTABLE_ENV "/usr/bin/env"
 #define MUZZY_COND_OUT_LEN 16
 

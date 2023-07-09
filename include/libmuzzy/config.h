@@ -7,6 +7,7 @@
 
 struct muzzy_config {
   const char **args;
+  const char *prg;
 
   muzzy_rand rand;
   struct muzzy_rand_cfg rand_cfg;
