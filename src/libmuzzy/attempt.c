@@ -49,12 +49,15 @@ struct muzzy_attempt muzzy_attempt_from_cfg(struct muzzy_config *cfg) {
   self.rand_cfg = cfg->rand_cfg;
   self.rand = cfg->rand;
   self.dry = cfg->dry;
+  self.word_lists = cfg->word_lists;
 
   if (strcmp(MUZZY_STDSTREAM_PATH, cfg->out_path) == 0) {
     self.out_to = stdout;
   } else {
-    self.out_to = fopen(cfg->out_path, "w");
+    self.out_to = fopen(cfg->out_path, "we");
   }
+
+  self.executable = cfg->prg;
 
   if (!self.out_to) {
     muzzy_errno();
@@ -212,10 +215,20 @@ void muzzy_attempt_free(struct muzzy_attempt *self) {
   for (size_t i = 0; i < self->word_lists.len; i++) {
     muzzy_words_free(muzzy_vec_get(&self->word_lists, i));
   }
+  muzzy_vec_free(&self->word_lists);
 
   if (self->out_to != stdout) {
     fclose(self->out_to);
   }
 
   free(self->args_fuzzed);
+
+  const char **arg = self->args;
+  while (*arg) {
+    free((void *)*arg);
+    arg++;
+  }
+  free(self->args);
+
+  free((void *)self->executable);
 }
