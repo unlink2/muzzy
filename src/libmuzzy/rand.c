@@ -1,5 +1,6 @@
 #include "libmuzzy/rand.h"
 #include "libmuzzy/error.h"
+#include "libmuzzy/log.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,8 +17,10 @@ struct muzzy_rand_cfg muzzy_rand_cfg_file(const char *path) {
 
   self.kind = MUZZY_FRAND;
   self.src_path = path;
+  muzzy_dbg("Rand file: '%s'\n", path);
   self.fp = fopen(path, "re");
   if (!self.fp) {
+    muzzy_error("Opening '%s' failed!\n", path);
     muzzy_errno();
   }
 

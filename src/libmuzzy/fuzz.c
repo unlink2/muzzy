@@ -88,7 +88,7 @@ char *muzzy_word_rep_rand(const char *input, const char *replace,
     muzzy_buffer_adv(buf, start_len);
 
     // select word
-    int64_t rng = rand(&rand_cfg);
+    int64_t rng = rand(rand_cfg);
     const char *word = words[rng % (int64_t)words_len];
 
     // copy words into buffer
