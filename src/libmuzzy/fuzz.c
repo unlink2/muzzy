@@ -40,6 +40,10 @@ struct muzzy_words muzzy_words_from_file(const char *path, const char *rep) {
   size_t len = 0;
   char *line_buf = NULL;
   while ((read = getline(&line_buf, &len, f)) != -1) {
+    size_t last = strlen(line_buf) - 1;
+    if (line_buf[last] == '\n' || line_buf[last] == '\r') {
+      line_buf[last] = '\0';
+    }
     char *next = strdup(line_buf);
     muzzy_vec_push(&self.list, &next);
   }
@@ -89,7 +93,8 @@ char *muzzy_word_rep_rand(const char *input, const char *replace,
 
     // select word
     int64_t rng = rand(rand_cfg);
-    const char *word = words[rng % (int64_t)words_len];
+    int64_t index = labs(rng % (int64_t)words_len);
+    const char *word = words[index];
 
     // copy words into buffer
     size_t word_len = strlen(word);
