@@ -205,7 +205,7 @@ int muzzy_attempt_run(struct muzzy_attempt *self) {
   // condition
 
   // output
-  fwrite(self->cond_out, 1, MUZZY_COND_OUT_LEN, self->out_to);
+  fputs(self->cond_out, self->out_to);
   fwrite(muzzy_buffer_start(&self->out), 1, muzzy_buffer_len(&self->out),
          self->out_to);
 
