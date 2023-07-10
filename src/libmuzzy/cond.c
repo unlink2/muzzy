@@ -43,11 +43,14 @@ bool muzzy_cond_check(struct muzzy_cond *self, int exit_code, const char *out) {
   return false;
 }
 
-bool muzzy_conds_check(struct muzzy_vec *conds, int exit_code,
-                       const char *out) {
+bool muzzy_conds_check(struct muzzy_vec *conds, int exit_code, const char *out,
+                       size_t n) {
   for (size_t i = 0; i < conds->len; i++) {
     struct muzzy_cond *cond = muzzy_vec_get(conds, i);
-    if (muzzy_cond_check(cond, exit_code, out)) {
+
+    if (muzzy_cond_check(cond, exit_code, out) &&
+        (cond->connector == MUZZY_COND_OR ||
+         muzzy_conds_check(conds, exit_code, out, n + 1))) {
       return true;
     }
   }

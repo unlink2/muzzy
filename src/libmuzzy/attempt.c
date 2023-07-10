@@ -18,6 +18,7 @@ struct muzzy_attempt muzzy_attempt_init(void) {
   self.out = muzzy_buffer_init();
   self.buf0 = muzzy_vec_init(sizeof(struct muzzy_buffer));
   self.buf1 = muzzy_vec_init(sizeof(struct muzzy_buffer));
+  self.out_to = stdout;
 
   return self;
 }
@@ -231,7 +232,7 @@ void muzzy_attempt_free(struct muzzy_attempt *self) {
   free(self->args_fuzzed);
 
   const char **arg = self->args;
-  while (*arg) {
+  while (arg && *arg) {
     free((void *)*arg);
     arg++;
   }
