@@ -175,7 +175,11 @@ int muzzy_attempt_exec(struct muzzy_attempt *self) {
       size_t len = strlen(*arg);
       memcpy(muzzy_buffer_next(&self->out, len), *arg, len);
       muzzy_buffer_adv(&self->out, len);
+      arg++;
     }
+    memcpy(muzzy_buffer_next(&self->out, 1), "\n", 1);
+    muzzy_buffer_adv(&self->out, 1);
+
     muzzy_buffer_null_term(&self->out);
   } else {
     // TODO: exec
