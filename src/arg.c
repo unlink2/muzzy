@@ -63,7 +63,8 @@ struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
       dry = arg_lit0(NULL, "dry", "Run without executing an actual command"),
       output = arg_file0("o", "output", "FILE", "Output file"),
 
-      condition = arg_str0("c", "cond", "cond", "Condition to check for"),
+      condition =
+          arg_strn("c", "cond", "cond", 0, 4096, "Condition to check for"),
 
       command = arg_strn(NULL, NULL, "", 1, 4096, "The command to execute"),
       end = arg_end(20),
