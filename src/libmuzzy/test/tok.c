@@ -16,4 +16,7 @@ void test_tok(void **state) {
 
   input = muzzy_tok_str(buf, input, 64);
   assert_string_equal("123", buf);
+
+  input = muzzy_tok_str(buf, input, 64);
+  assert_string_equal("", buf);
 }

@@ -73,7 +73,7 @@ uint8_t *muzzy_buffer_cat(char separator, const char **strings, size_t len) {
 
     // do not append \0 and also do not append
     // when the next element is the last
-    if (separator && i < len - 2) {
+    if (separator) {
       // space between all the commands
       *muzzy_buffer_next(&self, 1) = separator;
       muzzy_buffer_adv(&self, 1);

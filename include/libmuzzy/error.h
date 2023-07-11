@@ -26,10 +26,10 @@ enum muzzy_error {
   MUZZY_OK = 0,
   MUZZY_ERR_LIST_LEN_ZERO,
   // err_detail points to expression that failed
-  MUZZY_COND_PARSE_ERR,
-  // err_detail points to str that failed
-  MUZZY_TOK_ERR,
+  MUZZY_ERR_COND_PARSE,
   // errno is stored in err_detail
+  MUZZY_ERR_PIPE,
+  MUZZY_ERR_FORK,
   MUZZY_ERRNO
 };
 

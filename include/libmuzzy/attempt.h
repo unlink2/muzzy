@@ -18,6 +18,8 @@
 #define MUZZY_DEFAULT_DELAY_MS 0
 #define MUZZY_DEFAULT_RAND_FILE "/dev/urandom"
 
+#define MUZZY_BUF_READ 4096
+
 // an attempt is the execution enviornment for a fuzzer
 // execute the fuzzer based in all word lists,
 // run the command provided and apply all comparisons
@@ -54,6 +56,7 @@ struct muzzy_attempt {
   int32_t n_runs;
   int32_t delay_ms;
   bool dry;
+  bool no_color;
 };
 
 struct muzzy_attempt muzzy_attempt_init(void);

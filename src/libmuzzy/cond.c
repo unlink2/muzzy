@@ -1,7 +1,10 @@
 #include "libmuzzy/cond.h"
+#include "libmuzzy/error.h"
 #include "libmuzzy/log.h"
+#include "libmuzzy/tok.h"
 #include "libmuzzy/vec.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 struct muzzy_cond muzzy_cond_init(void) {
@@ -13,7 +16,88 @@ struct muzzy_cond muzzy_cond_init(void) {
   return self;
 }
 
-struct muzzy_cond muzzy_cond_from(const char *expr) {}
+struct muzzy_cond muzzy_cond_from(const char *expr) {
+  const size_t len = 64;
+  char buf[len];
+
+  muzzy_dbg("Parsing condition '%s'\n", expr);
+
+  struct muzzy_cond self = muzzy_cond_init();
+  expr = muzzy_tok_str(buf, expr, len);
+
+  bool not = false;
+  enum muzzy_cond_op op = MUZZY_COND_FALSE;
+  enum muzzy_cond_con con = MUZZY_COND_OR;
+  int int_val = 0;
+
+  // check for not
+  if (strncmp(buf, "not", len) == 0) {
+    not = true;
+    expr = muzzy_tok_str(buf, expr, len);
+  }
+
+  // check operaotr
+  if (strncmp(buf, ">", len) == 0) {
+    op = MUZZY_COND_EC_GT;
+  } else if (strncmp(buf, ">=", len) == 0) {
+    op = MUZZY_COND_EC_GTEQ;
+  } else if (strncmp(buf, "<", len) == 0) {
+    op = MUZZY_COND_EC_LT;
+  } else if (strncmp(buf, "<=", len) == 0) {
+    op = MUZZY_COND_EC_LTEQ;
+  } else if (strncmp(buf, "==", len) == 0) {
+    op = MUZZY_COND_EC_EQ;
+  } else {
+    muzzy_err_set(MUZZY_ERR_COND_PARSE);
+    muzzy_err_detail(expr, strlen(expr));
+  }
+
+  // check value
+  expr = muzzy_tok_str(buf, expr, len);
+  switch (op) {
+  case MUZZY_COND_TRUE:
+  case MUZZY_COND_FALSE:
+    break;
+  case MUZZY_COND_EC_EQ:
+  case MUZZY_COND_EC_GT:
+  case MUZZY_COND_EC_GTEQ:
+  case MUZZY_COND_EC_LT:
+  case MUZZY_COND_EC_LTEQ:
+    errno = 0;
+    int_val = (int)strtol(buf, NULL, 0);
+    if (errno) {
+      muzzy_errno();
+    }
+    expr = muzzy_tok_str(buf, expr, len);
+    break;
+  }
+
+  // check connector
+  if (strncmp(buf, "and", len) == 0) {
+    con = MUZZY_COND_AND;
+  } else if (strncmp(buf, "or", len) == 0) {
+    con = MUZZY_COND_OR;
+  } else if (buf[0] != '\0') {
+    muzzy_err_set(MUZZY_ERR_COND_PARSE);
+    muzzy_err_detail(expr, strlen(expr));
+  }
+
+  // init
+  switch (op) {
+  case MUZZY_COND_TRUE:
+  case MUZZY_COND_FALSE:
+    break;
+  case MUZZY_COND_EC_EQ:
+  case MUZZY_COND_EC_GT:
+  case MUZZY_COND_EC_GTEQ:
+  case MUZZY_COND_EC_LT:
+  case MUZZY_COND_EC_LTEQ:
+    self = muzzy_cond_init_ec(op, con, not, int_val);
+    break;
+  }
+
+  return self;
+}
 
 struct muzzy_cond muzzy_cond_init_ec(enum muzzy_cond_op op,
                                      enum muzzy_cond_con connector, bool not,

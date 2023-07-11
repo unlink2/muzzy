@@ -3,6 +3,7 @@
 #include "libmuzzy/config.h"
 #include "libmuzzy/error.h"
 #include "libmuzzy/fuzz.h"
+#include "libmuzzy/log.h"
 #include "libmuzzy/rand.h"
 #include "libmuzzy/vec.h"
 #include "libmuzzy/cond.h"
@@ -12,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
 struct muzzy_attempt muzzy_attempt_init(void) {
   struct muzzy_attempt self;
@@ -28,7 +30,13 @@ struct muzzy_attempt muzzy_attempt_init(void) {
 
 struct muzzy_attempt muzzy_attempt_from_cfg(struct muzzy_config *cfg) {
   struct muzzy_attempt self = muzzy_attempt_init();
+
   self.args = cfg->args;
+
+  muzzy_cond_vec_free(&self.conditions);
+  self.conditions = cfg->conditions;
+
+  muzzy_conds_dbg_print(&self.conditions, 0, "", 0);
 
   size_t args_len = 1; // start at 1 to insert NULL in the end
   const char **arg = cfg->args;
@@ -54,6 +62,10 @@ struct muzzy_attempt muzzy_attempt_from_cfg(struct muzzy_config *cfg) {
   self.rand = cfg->rand;
   self.dry = cfg->dry;
   self.word_lists = cfg->word_lists;
+  self.no_color = cfg->no_color;
+
+  muzzy_dbg("Delay %d ms\nN-runs: %d\nDry: %d\n", self.delay_ms, self.n_runs,
+            self.dry);
 
   if (strcmp(MUZZY_STDSTREAM_PATH, cfg->out_path) == 0) {
     self.out_to = stdout;
@@ -173,6 +185,7 @@ int muzzy_attempt_exec(struct muzzy_attempt *self) {
     return -1;
   }
 
+  int status = 0;
   if (self->dry) {
     const char **arg = args_fuzzed;
     while (*arg) {
@@ -188,10 +201,54 @@ int muzzy_attempt_exec(struct muzzy_attempt *self) {
 
     muzzy_buffer_null_term(&self->out);
   } else {
-    // TODO: exec
+    int link[2];
+    if (pipe(link) == -1) { // NOLINT
+      muzzy_err_set(MUZZY_ERR_PIPE);
+      return true;
+    }
+
+    pid_t pid = fork();
+    if (pid == -1) {
+      muzzy_err_set(MUZZY_ERR_FORK);
+      return true;
+    }
+
+    if (pid == 0) {
+      // child proc
+      dup2(link[1], STDOUT_FILENO);
+
+      // set up pipes
+      close(link[0]);
+      close(link[1]);
+
+      execv(self->executable, (char **)self->args_fuzzed);
+      // this should never be called!
+      muzzy_panic("'%s': No such file or directory\n", // NOLINT
+                  self->executable);                   // NOLINT
+    } else {
+      // parent proc
+      close(link[1]);
+      // wait for child to exit and obtain exit code
+      waitpid(pid, &status, 0);
+
+      int64_t n_read = 0;
+      do {
+        // read from fd until end or error
+        uint8_t *next = muzzy_buffer_next(&self->out, MUZZY_BUF_READ);
+        muzzy_dbg_assert(next);
+
+        n_read = read(link[0], next, MUZZY_BUF_READ);
+        if (n_read == -1) {
+          muzzy_errno();
+          return EXIT_FAILURE;
+        }
+
+        muzzy_buffer_adv(&self->out, n_read);
+      } while (n_read);
+    }
   }
 
-  return 0;
+  return status;
 }
 
 void muzzy_attempt_out(struct muzzy_attempt *self) {
@@ -202,30 +259,61 @@ void muzzy_attempt_out(struct muzzy_attempt *self) {
 }
 
 int muzzy_attempt_run(struct muzzy_attempt *self) {
-  muzzy_buffer_clear(&self->out);
-  // act
-  int act_exit_code = muzzy_attempt_exec(self);
+  int act_exit_code = 0;
+  size_t n_runs = self->n_runs;
+  while (n_runs == MUZZY_N_RUNS_INF || n_runs--) {
+    muzzy_buffer_clear(&self->out);
+    // act
+    act_exit_code = muzzy_attempt_exec(self);
+    if (muzzy_err()) {
+      break;
+    }
 
-  // condition
-  int fd = fileno(self->out_to);
-  if (self->conditions.len == 0 || !isatty(fd)) {
-    self->cond_out[0] = '\0';
-  } else if (muzzy_conds_check(&self->conditions, act_exit_code,
-                               (const char *)muzzy_buffer_start(&self->out),
-                               0)) {
-    muzzy_color(self->cond_out, MUZZY_COLOR_GREEN);
-  } else {
-    muzzy_color(self->cond_out, MUZZY_COLOR_RED);
-  }
+    // condition
+    int fd = fileno(self->out_to);
+    bool color = isatty(fd) && !self->no_color;
+    if (self->conditions.len == 0) {
+      self->cond_out[0] = '\0';
+    } else if (muzzy_conds_check(&self->conditions, act_exit_code,
+                                 (const char *)muzzy_buffer_start(&self->out),
+                                 0)) {
+      if (color) {
+        muzzy_color(self->cond_out, MUZZY_COLOR_GREEN);
+      } else {
+        self->cond_out[0] = '+';
+        self->cond_out[1] = ' ';
+      }
+    } else {
+      if (color) {
+        muzzy_color(self->cond_out, MUZZY_COLOR_RED);
+      } else {
+        self->cond_out[0] = '-';
+        self->cond_out[1] = ' ';
+      }
+    }
 
-  // output
-  fputs(self->cond_out, self->out_to);
-  fwrite(muzzy_buffer_start(&self->out), 1, muzzy_buffer_len(&self->out),
-         self->out_to);
+    // output
+    if (fputs(self->cond_out, self->out_to) == -1) {
+      muzzy_errno();
+      break;
+    }
+    if (fwrite(muzzy_buffer_start(&self->out), 1, muzzy_buffer_len(&self->out),
+               self->out_to) == -1) {
+      muzzy_errno();
+      break;
+    }
 
-  if (!isatty(fd)) {
-    muzzy_color(self->cond_out, MUZZY_COLOR_OFF);
-    fputs(self->cond_out, self->out_to);
+    if (color) {
+      muzzy_color(self->cond_out, MUZZY_COLOR_OFF);
+      if (fputs(self->cond_out, self->out_to) == -1) {
+        muzzy_errno();
+        break;
+      }
+    }
+
+    if (self->delay_ms) {
+      usleep(self->delay_ms);
+    }
   }
 
   return act_exit_code;

@@ -36,6 +36,6 @@ void test_buffer(void **state) {
 
   // test cat
   uint8_t *cat_res = muzzy_buffer_cat(' ', (const char *[2]){"Test", "cat"}, 2);
-  assert_string_equal("Test cat", cat_res);
+  assert_string_equal("Test cat ", (char *)cat_res);
   free(cat_res);
 }

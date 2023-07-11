@@ -1,10 +1,12 @@
 #include "arg.h"
 #include "libmuzzy/attempt.h"
 #include "libmuzzy/buffer.h"
+#include "libmuzzy/cond.h"
 #include "libmuzzy/config.h"
 #include "libmuzzy/fuzz.h"
 #include "libmuzzy/log.h"
 #include "libmuzzy/rand.h"
+#include "libmuzzy/vec.h"
 #include <argtable2.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -18,6 +20,7 @@ struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
   struct arg_file *words = NULL;
   struct arg_str *replace = NULL;
   struct arg_lit *no_sh = NULL;
+  struct arg_lit *no_color = NULL;
   struct arg_int *delay_ms = NULL;
   struct arg_lit *stdrand = NULL;
   struct arg_int *seed_rand = NULL;
@@ -48,6 +51,7 @@ struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
       no_sh =
           arg_lit0(NULL, "nosh",
                    "Execute command directly instead of through '/bin/sh -c'."),
+      no_color = arg_lit0(NULL, "nocolor", "Disable colors"),
       delay_ms = arg_int0(NULL, "delay", "MS", "Delay between attempts in ms."),
       stdrand = arg_lit0(NULL, "stdrand", "Use built-in rand."),
       seed_rand = arg_int0(NULL, "seed", "INT", "Seed the built-in rand."),
@@ -191,6 +195,20 @@ struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
     cfg.out_path = output->filename[output->count - 1];
   } else {
     cfg.out_path = MUZZY_STDSTREAM_PATH;
+  }
+
+  for (size_t i = 0; i < condition->count; i++) {
+    struct muzzy_cond next = muzzy_cond_from(condition->sval[i]);
+    if (muzzy_err()) {
+      break;
+    }
+    muzzy_vec_push(&cfg.conditions, &next);
+  }
+
+  if (no_color->count) {
+    cfg.no_color = true;
+  } else {
+    cfg.no_color = false;
   }
 
   arg_freetable(argtable, sizeof(argtable) / sizeof(argtable[0]));

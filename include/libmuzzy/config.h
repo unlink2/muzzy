@@ -15,10 +15,12 @@ struct muzzy_config {
   struct muzzy_rand_cfg rand_cfg;
 
   struct muzzy_vec word_lists;
+  struct muzzy_vec conditions;
   bool no_sh; // run command using /usr/bin/env instead of sh -c
   bool dry;
   int32_t delay_ms;
   int32_t n_runs;
+  bool no_color;
 
   const char *out_path;
 };
