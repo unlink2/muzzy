@@ -1,5 +1,6 @@
 #include "libmuzzy/cond.h"
 #include "libmuzzy/vec.h"
+#include <stdio.h>
 #include <string.h>
 
 struct muzzy_cond muzzy_cond_init(void) {
@@ -29,29 +30,39 @@ bool muzzy_cond_check(struct muzzy_cond *self, int exit_code, const char *out) {
   case MUZZY_COND_TRUE:
     return true;
   case MUZZY_COND_EC_EQ:
-    return self->exit_code == exit_code;
+    return exit_code == self->exit_code;
   case MUZZY_COND_EC_GT:
-    return self->exit_code > exit_code;
+    return exit_code > self->exit_code;
   case MUZZY_COND_EC_GTEQ:
-    return self->exit_code >= exit_code;
+    return exit_code >= self->exit_code;
   case MUZZY_COND_EC_LT:
-    return self->exit_code < exit_code;
+    return exit_code < self->exit_code;
   case MUZZY_COND_EC_LTEQ:
-    return self->exit_code <= exit_code;
+    return exit_code <= self->exit_code;
   }
 
   return false;
 }
 
 bool muzzy_conds_check(struct muzzy_vec *conds, int exit_code, const char *out,
-                       size_t n) {
-  for (size_t i = 0; i < conds->len; i++) {
-    struct muzzy_cond *cond = muzzy_vec_get(conds, i);
+                       size_t *n) {
+  size_t loc_n = 0;
+  if (n == NULL) {
+    n = &loc_n;
+  }
 
-    if (muzzy_cond_check(cond, exit_code, out) &&
-        (cond->connector == MUZZY_COND_OR ||
-         muzzy_conds_check(conds, exit_code, out, n + 1))) {
-      return true;
+  for (; *n < conds->len; (*n)++) {
+    struct muzzy_cond *cond = muzzy_vec_get(conds, *n);
+    if (muzzy_cond_check(cond, exit_code, out)) {
+      if (cond->connector == MUZZY_COND_OR) {
+        return true;
+      }
+      (*n)++;
+      if (muzzy_conds_check(conds, exit_code, out, n)) {
+        return true;
+      }
+    } else if (cond->connector == MUZZY_COND_AND) {
+      return false;
     }
   }
   return false;
