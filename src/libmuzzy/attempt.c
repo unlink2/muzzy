@@ -5,6 +5,8 @@
 #include "libmuzzy/fuzz.h"
 #include "libmuzzy/rand.h"
 #include "libmuzzy/vec.h"
+#include "libmuzzy/cond.h"
+#include "libmuzzy/color.h"
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,6 +21,7 @@ struct muzzy_attempt muzzy_attempt_init(void) {
   self.buf0 = muzzy_vec_init(sizeof(struct muzzy_buffer));
   self.buf1 = muzzy_vec_init(sizeof(struct muzzy_buffer));
   self.out_to = stdout;
+  self.conditions = muzzy_vec_init(sizeof(struct muzzy_cond));
 
   return self;
 }
@@ -204,11 +207,26 @@ int muzzy_attempt_run(struct muzzy_attempt *self) {
   int act_exit_code = muzzy_attempt_exec(self);
 
   // condition
+  int fd = fileno(self->out_to);
+  if (self->conditions.len == 0 || !isatty(fd)) {
+    self->cond_out[0] = '\0';
+  } else if (muzzy_conds_check(&self->conditions, act_exit_code,
+                               (const char *)muzzy_buffer_start(&self->out),
+                               0)) {
+    muzzy_color(self->cond_out, MUZZY_COLOR_GREEN);
+  } else {
+    muzzy_color(self->cond_out, MUZZY_COLOR_RED);
+  }
 
   // output
   fputs(self->cond_out, self->out_to);
   fwrite(muzzy_buffer_start(&self->out), 1, muzzy_buffer_len(&self->out),
          self->out_to);
+
+  if (!isatty(fd)) {
+    muzzy_color(self->cond_out, MUZZY_COLOR_OFF);
+    fputs(self->cond_out, self->out_to);
+  }
 
   return act_exit_code;
 }
@@ -216,6 +234,7 @@ int muzzy_attempt_run(struct muzzy_attempt *self) {
 void muzzy_attempt_free(struct muzzy_attempt *self) {
   muzzy_buf_vec_free(&self->buf0);
   muzzy_buf_vec_free(&self->buf1);
+  muzzy_cond_vec_free(&self->conditions);
 
   muzzy_rand_cfg_free(&self->rand_cfg);
   muzzy_buffer_free(&self->out);

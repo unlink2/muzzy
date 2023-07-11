@@ -27,6 +27,7 @@ struct muzzy_attempt {
   // vec of word lists
   struct muzzy_vec word_lists;
   struct muzzy_rand_cfg rand_cfg;
+  struct muzzy_vec conditions;
   const char *executable;
 
   // NULL terminated input arguments
@@ -40,7 +41,7 @@ struct muzzy_attempt {
   struct muzzy_vec buf0;
   struct muzzy_vec buf1;
 
-  const char cond_out[MUZZY_COND_OUT_LEN];
+  char cond_out[MUZZY_COND_OUT_LEN];
   struct muzzy_buffer out;
 
   // dump out to this file
