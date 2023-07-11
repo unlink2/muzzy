@@ -41,7 +41,10 @@ bool muzzy_cond_check(struct muzzy_cond *self, int exit_code, const char *out);
 
 // check all conditions in this vec
 bool muzzy_conds_check(struct muzzy_vec *conds, int exit_code, const char *out,
-                       size_t *n);
+                       size_t n);
+
+void muzzy_conds_dbg_print(struct muzzy_vec *conds, int exit_code,
+                           const char *out, size_t n);
 
 void muzzy_cond_vec_free(struct muzzy_vec *conds);
 

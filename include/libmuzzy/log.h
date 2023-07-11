@@ -21,7 +21,6 @@ extern FILE *MUZZY_LOG_TARGET;
 #define muzzy_dbg_assert(a) assert((a))
 #define muzzy_log_fprintf(f, level, ...)                                       \
   if ((level) <= MUZZY_LOG_LEVEL) {                                            \
-    fprintf((f), "[%d] ", level);                                              \
     fprintf((f), __VA_ARGS__);                                                 \
   }
 
