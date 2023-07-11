@@ -62,10 +62,35 @@ bool muzzy_cond_check(struct muzzy_cond *self, int exit_code, const char *out) {
   return res;
 }
 
+bool muzzy_conds_check(struct muzzy_vec *conds, int exit_code, const char *out,
+                       size_t n) {
+  // muzzy_conds_dbg_print(conds, exit_code, out, n);
+
+  while (n < conds->len) {
+    bool res = true;
+    struct muzzy_cond *cond = NULL;
+    do {
+      cond = muzzy_vec_get(conds, n);
+      if (cond) {
+        res &= muzzy_cond_check(cond, exit_code, out);
+        n++;
+      }
+    } while (cond && cond->connector == MUZZY_COND_AND);
+    if (res) {
+      return res;
+    }
+  }
+  return false;
+}
+
 void muzzy_conds_dbg_print(struct muzzy_vec *conds, int exit_code,
                            const char *out, size_t n) {
   while (n < conds->len) {
     struct muzzy_cond *cond = muzzy_vec_get(conds, n);
+
+    if (cond->not ) {
+      muzzy_dbg(" not");
+    }
 
     switch (cond->op) {
     case MUZZY_COND_TRUE:
@@ -129,25 +154,6 @@ void muzzy_conds_dbg_print(struct muzzy_vec *conds, int exit_code,
     n++;
   }
   muzzy_dbg("\n");
-}
-
-bool muzzy_conds_check(struct muzzy_vec *conds, int exit_code, const char *out,
-                       size_t n) {
-  muzzy_conds_dbg_print(conds, exit_code, out, n);
-
-  while (n < conds->len) {
-    bool res = false;
-    struct muzzy_cond *cond = NULL;
-    do {
-      struct muzzy_cond *cond = muzzy_vec_get(conds, n);
-      res |= muzzy_cond_check(cond, exit_code, out);
-      n++;
-    } while (cond && cond->connector == MUZZY_COND_AND);
-    if (res) {
-      return res;
-    }
-  }
-  return false;
 }
 
 void muzzy_cond_vec_free(struct muzzy_vec *conds) { muzzy_vec_free(conds); }
