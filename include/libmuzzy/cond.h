@@ -33,6 +33,19 @@ struct muzzy_cond {
 
 struct muzzy_cond muzzy_cond_init(void);
 
+// strtok all arguments
+// first arg can either be
+// 'not' or an operator
+// valid numeric operators:
+//  >, <, >=, <=, ==
+// valid string operators:
+//   !!!Currently not implemented!!!
+// the second or third value is the expression comparison value
+// this can either be a number or string depending on the operator types.
+// The last argument may be either empty, 'and' or 'or'. This will form a
+// connection for the next operation
+struct muzzy_cond muzzy_cond_from(const char *expr);
+
 struct muzzy_cond muzzy_cond_init_ec(enum muzzy_cond_op op,
                                      enum muzzy_cond_con connector, bool not,
                                      int exit_code);

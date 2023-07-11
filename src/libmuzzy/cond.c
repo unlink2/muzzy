@@ -13,6 +13,8 @@ struct muzzy_cond muzzy_cond_init(void) {
   return self;
 }
 
+struct muzzy_cond muzzy_cond_from(const char *expr) {}
+
 struct muzzy_cond muzzy_cond_init_ec(enum muzzy_cond_op op,
                                      enum muzzy_cond_con connector, bool not,
                                      int exit_code) {

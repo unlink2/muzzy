@@ -27,6 +27,8 @@ struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
 
   struct arg_file *output = NULL;
 
+  struct arg_str *condition = NULL;
+
   struct arg_str *command = NULL;
 
   // arg end stores errors
@@ -47,7 +49,7 @@ struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
           arg_lit0(NULL, "nosh",
                    "Execute command directly instead of through '/bin/sh -c'."),
       delay_ms = arg_int0(NULL, "delay", "MS", "Delay between attempts in ms."),
-      stdrand = arg_lit0(NULL, "stdrand", "Use built-in rand instead."),
+      stdrand = arg_lit0(NULL, "stdrand", "Use built-in rand."),
       seed_rand = arg_int0(NULL, "seed", "INT", "Seed the built-in rand."),
       n_runs = arg_int0("n", "nruns", "INT", "Amount of attempts to run"),
       rand_file = arg_file0(NULL, "frand", "FILE",
@@ -56,6 +58,8 @@ struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
 
       dry = arg_lit0(NULL, "dry", "Run without executing an actual command"),
       output = arg_file0("o", "output", "FILE", "Output file"),
+
+      condition = arg_str0("c", "cond", "cond", "Condition to check for"),
 
       command = arg_strn(NULL, NULL, "", 1, 4096, "The command to execute"),
       end = arg_end(20),
