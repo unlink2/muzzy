@@ -47,6 +47,8 @@ struct muzzy_cond muzzy_cond_from(const char *expr) {
     op = MUZZY_COND_EC_LTEQ;
   } else if (strncmp(buf, "==", len) == 0) {
     op = MUZZY_COND_EC_EQ;
+  } else if (strncmp(buf, "contains", len) == 0) {
+    op = MUZZY_COND_CONTAINS;
   } else {
     muzzy_err_set(MUZZY_ERR_COND_PARSE);
     muzzy_err_detail(expr, strlen(expr));
@@ -68,6 +70,9 @@ struct muzzy_cond muzzy_cond_from(const char *expr) {
     if (errno) {
       muzzy_errno();
     }
+    expr = muzzy_tok_str(buf, expr, len);
+    break;
+  case MUZZY_COND_CONTAINS:
     expr = muzzy_tok_str(buf, expr, len);
     break;
   }
@@ -94,6 +99,9 @@ struct muzzy_cond muzzy_cond_from(const char *expr) {
   case MUZZY_COND_EC_LTEQ:
     self = muzzy_cond_init_ec(op, con, not, int_val);
     break;
+  case MUZZY_COND_CONTAINS:
+    self = muzzy_cond_init_out_cmp(op, con, not, buf);
+    break;
   }
 
   return self;
@@ -105,6 +113,17 @@ struct muzzy_cond muzzy_cond_init_ec(enum muzzy_cond_op op,
   struct muzzy_cond self = muzzy_cond_init();
   self.op = op;
   self.exit_code = exit_code;
+  self.connector = connector;
+  self.not = not ;
+  return self;
+}
+
+struct muzzy_cond muzzy_cond_init_out_cmp(enum muzzy_cond_op op,
+                                          enum muzzy_cond_con connector,
+                                          bool not, const char *tok) {
+  struct muzzy_cond self = muzzy_cond_init();
+  self.op = op;
+  self.contains = strdup(tok);
   self.connector = connector;
   self.not = not ;
   return self;
@@ -138,6 +157,9 @@ bool muzzy_cond_check(struct muzzy_cond *self, int exit_code, const char *out) {
     break;
   case MUZZY_COND_EC_LTEQ:
     res = exit_code <= self->exit_code;
+    break;
+  case MUZZY_COND_CONTAINS:
+    res = strstr(out, self->contains) != NULL;
     break;
   }
 
@@ -189,6 +211,9 @@ void muzzy_conds_dbg_print(struct muzzy_vec *conds, int exit_code,
     case MUZZY_COND_EC_LTEQ:
       muzzy_dbg(" %d", exit_code);
       break;
+    case MUZZY_COND_CONTAINS:
+      muzzy_dbg(" %s", out);
+      break;
     }
 
     switch (cond->op) {
@@ -213,6 +238,9 @@ void muzzy_conds_dbg_print(struct muzzy_vec *conds, int exit_code,
     case MUZZY_COND_EC_LTEQ:
       muzzy_dbg(" <=");
       break;
+    case MUZZY_COND_CONTAINS:
+      muzzy_dbg(" contains");
+      break;
     }
 
     switch (cond->op) {
@@ -225,6 +253,9 @@ void muzzy_conds_dbg_print(struct muzzy_vec *conds, int exit_code,
     case MUZZY_COND_EC_LT:
     case MUZZY_COND_EC_LTEQ:
       muzzy_dbg(" %d", cond->exit_code);
+      break;
+    case MUZZY_COND_CONTAINS:
+      muzzy_dbg(" %s", cond->contains);
       break;
     }
 
@@ -242,4 +273,15 @@ void muzzy_conds_dbg_print(struct muzzy_vec *conds, int exit_code,
   muzzy_dbg("\n");
 }
 
-void muzzy_cond_vec_free(struct muzzy_vec *conds) { muzzy_vec_free(conds); }
+void muzzy_cond_free(struct muzzy_cond *self) {
+  if (self->op == MUZZY_COND_CONTAINS) {
+    free((void *)self->contains);
+  }
+}
+
+void muzzy_cond_vec_free(struct muzzy_vec *conds) {
+  for (size_t i = 0; i < conds->len; i++) {
+    muzzy_cond_free(muzzy_vec_get(conds, i));
+  }
+  muzzy_vec_free(conds);
+}

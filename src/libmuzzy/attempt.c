@@ -186,8 +186,12 @@ int muzzy_attempt_exec(struct muzzy_attempt *self) {
   }
 
   int status = 0;
-  if (self->dry) {
+  if (self->dry || !self->no_echo_cmd) {
     const char **arg = args_fuzzed;
+
+    memcpy(muzzy_buffer_next(&self->out, 1), ">", 1);
+    muzzy_buffer_adv(&self->out, 1);
+
     while (*arg) {
       size_t len = strlen(*arg);
       memcpy(muzzy_buffer_next(&self->out, len), *arg, len);
@@ -199,8 +203,12 @@ int muzzy_attempt_exec(struct muzzy_attempt *self) {
     memcpy(muzzy_buffer_next(&self->out, 1), "\n", 1);
     muzzy_buffer_adv(&self->out, 1);
 
-    muzzy_buffer_null_term(&self->out);
-  } else {
+    if (self->dry) {
+      muzzy_buffer_null_term(&self->out);
+    }
+  }
+
+  if (!self->dry) {
     int link[2];
     if (pipe(link) == -1) { // NOLINT
       muzzy_err_set(MUZZY_ERR_PIPE);

@@ -80,4 +80,12 @@ void test_cond(void **state) {
 
     muzzy_cond_vec_free(&v);
   }
+  {
+    struct muzzy_cond c1 = muzzy_cond_init_out_cmp(
+        MUZZY_COND_CONTAINS, MUZZY_COND_AND, false, "test");
+    assert_true(muzzy_cond_check(&c1, 0, "contains test string"));
+    assert_false(muzzy_cond_check(&c1, 0, "does not contain expected string"));
+
+    muzzy_cond_free(&c1);
+  }
 }

@@ -57,6 +57,7 @@ struct muzzy_attempt {
   int32_t delay_ms;
   bool dry;
   bool no_color;
+  bool no_echo_cmd;
 };
 
 struct muzzy_attempt muzzy_attempt_init(void);

@@ -12,6 +12,8 @@ enum muzzy_cond_op {
   MUZZY_COND_EC_GTEQ,
   MUZZY_COND_EC_LT,
   MUZZY_COND_EC_LTEQ,
+
+  MUZZY_COND_CONTAINS,
 };
 
 enum muzzy_cond_con {
@@ -25,6 +27,7 @@ struct muzzy_cond {
   bool not ;
   union {
     int exit_code;
+    const char *contains;
   };
 };
 
@@ -47,6 +50,10 @@ struct muzzy_cond muzzy_cond_init_ec(enum muzzy_cond_op op,
                                      enum muzzy_cond_con connector, bool not,
                                      int exit_code);
 
+struct muzzy_cond muzzy_cond_init_out_cmp(enum muzzy_cond_op op,
+                                          enum muzzy_cond_con connector,
+                                          bool not, const char *tok);
+
 bool muzzy_cond_check(struct muzzy_cond *self, int exit_code, const char *out);
 
 // check all conditions in this vec
@@ -56,6 +63,7 @@ bool muzzy_conds_check(struct muzzy_vec *conds, int exit_code, const char *out,
 void muzzy_conds_dbg_print(struct muzzy_vec *conds, int exit_code,
                            const char *out, size_t n);
 
+void muzzy_cond_free(struct muzzy_cond *self);
 void muzzy_cond_vec_free(struct muzzy_vec *conds);
 
 #endif

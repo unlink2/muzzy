@@ -21,6 +21,7 @@ struct muzzy_config {
   int32_t delay_ms;
   int32_t n_runs;
   bool no_color;
+  bool no_echo;
 
   const char *out_path;
 };
