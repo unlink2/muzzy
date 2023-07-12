@@ -23,6 +23,7 @@ struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
   struct arg_lit *no_color = NULL;
   struct arg_int *delay_ms = NULL;
   struct arg_lit *stdrand = NULL;
+  struct arg_lit *linear = NULL;
   struct arg_int *seed_rand = NULL;
   struct arg_int *n_runs = NULL;
   struct arg_file *rand_file = NULL;
@@ -57,6 +58,8 @@ struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
       no_color = arg_lit0(NULL, "nocolor", "Disable colors"),
       delay_ms = arg_int0(NULL, "delay", "MS", "Delay between attempts in ms."),
       stdrand = arg_lit0(NULL, "stdrand", "Use built-in rand."),
+      linear =
+          arg_lit0(NULL, "linear", "Use incrementing number instead of rand."),
       seed_rand = arg_int0(NULL, "seed", "INT", "Seed the built-in rand."),
       n_runs = arg_int0("n", "nruns", "INT", "Amount of attempts to run"),
       rand_file = arg_file0(NULL, "frand", "FILE",
@@ -182,6 +185,9 @@ struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
 
   if (stdrand->count) {
     cfg.rand = muzzy_stdrand;
+    cfg.rand_cfg = muzzy_rand_cfg_init();
+  } else if (linear->count) {
+    cfg.rand = muzzy_lrand;
     cfg.rand_cfg = muzzy_rand_cfg_init();
   } else {
     cfg.rand = muzzy_frand;

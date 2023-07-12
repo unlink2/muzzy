@@ -14,6 +14,7 @@ struct muzzy_rand_cfg {
     struct {
       const char *src_path;
       FILE *fp;
+      int64_t linear;
     };
     void *custom;
   };
@@ -27,6 +28,7 @@ int64_t muzzy_stdrand(void *data);
 
 // read data from file and use them for rand
 int64_t muzzy_frand(void *data);
+int64_t muzzy_lrand(void *data);
 
 void muzzy_rand_cfg_free(struct muzzy_rand_cfg *self);
 void muzzy_frand_cfg_free(struct muzzy_rand_cfg *self);

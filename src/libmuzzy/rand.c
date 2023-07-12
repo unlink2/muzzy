@@ -39,6 +39,11 @@ int64_t muzzy_frand(void *data) {
   return res;
 }
 
+int64_t muzzy_lrand(void *data) {
+  struct muzzy_rand_cfg *cfg = data;
+  return cfg->linear++;
+}
+
 void muzzy_rand_cfg_free(struct muzzy_rand_cfg *self) {
   switch (self->kind) {
   case MUZZY_FRAND:
