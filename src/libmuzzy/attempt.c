@@ -298,6 +298,11 @@ int muzzy_attempt_run(struct muzzy_attempt *self) {
     }
 
     // output
+    if (fputs(self->cond_out, self->out_to) == -1) {
+      muzzy_errno();
+      break;
+    }
+
     if (!self->no_echo_cmd) {
       const char **arg = self->args_fuzzed;
       fputs(">", self->out_to);
@@ -307,11 +312,6 @@ int muzzy_attempt_run(struct muzzy_attempt *self) {
         arg++;
       }
       fputs("\n", self->out_to);
-    }
-
-    if (fputs(self->cond_out, self->out_to) == -1) {
-      muzzy_errno();
-      break;
     }
 
     if (!self->no_cmd_out) {
