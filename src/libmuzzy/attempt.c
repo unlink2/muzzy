@@ -65,6 +65,7 @@ struct muzzy_attempt muzzy_attempt_from_cfg(struct muzzy_config *cfg) {
   self.no_color = cfg->no_color;
   self.no_echo_cmd = cfg->no_echo;
   self.no_cmd_out = cfg->no_cmd_out;
+  self.only_ok = cfg->only_ok;
 
   muzzy_dbg("Delay %d ms\nN-runs: %d\nDry: %d\n", self.delay_ms, self.n_runs,
             self.dry);
@@ -277,6 +278,7 @@ int muzzy_attempt_run(struct muzzy_attempt *self) {
     // condition
     int fd = fileno(self->out_to);
     bool color = isatty(fd) && !self->no_color;
+    bool ok = true;
     if (self->conditions.len == 0) {
       self->cond_out[0] = '\0';
     } else if (muzzy_conds_check(&self->conditions, act_exit_code,
@@ -288,6 +290,7 @@ int muzzy_attempt_run(struct muzzy_attempt *self) {
         self->cond_out[0] = '+';
         self->cond_out[1] = ' ';
       }
+      ok = true;
     } else {
       if (color) {
         muzzy_color(self->cond_out, MUZZY_COLOR_RED);
@@ -295,38 +298,41 @@ int muzzy_attempt_run(struct muzzy_attempt *self) {
         self->cond_out[0] = '-';
         self->cond_out[1] = ' ';
       }
+      ok = false;
     }
 
-    // output
-    if (fputs(self->cond_out, self->out_to) == -1) {
-      muzzy_errno();
-      break;
-    }
-
-    if (!self->no_echo_cmd) {
-      const char **arg = self->args_fuzzed;
-      fputs(">", self->out_to);
-      while (*arg) {
-        fputs(*arg, self->out_to);
-        fputs(" ", self->out_to);
-        arg++;
-      }
-      fputs("\n", self->out_to);
-    }
-
-    if (!self->no_cmd_out) {
-      if (fwrite(muzzy_buffer_start(&self->out), 1,
-                 muzzy_buffer_len(&self->out), self->out_to) == -1) {
-        muzzy_errno();
-        break;
-      }
-    }
-
-    if (color) {
-      muzzy_color(self->cond_out, MUZZY_COLOR_OFF);
+    if (!self->only_ok || ok) {
+      // output
       if (fputs(self->cond_out, self->out_to) == -1) {
         muzzy_errno();
         break;
+      }
+
+      if (!self->no_echo_cmd) {
+        const char **arg = self->args_fuzzed;
+        fputs(">", self->out_to);
+        while (*arg) {
+          fputs(*arg, self->out_to);
+          fputs(" ", self->out_to);
+          arg++;
+        }
+        fputs("\n", self->out_to);
+      }
+
+      if (!self->no_cmd_out) {
+        if (fwrite(muzzy_buffer_start(&self->out), 1,
+                   muzzy_buffer_len(&self->out), self->out_to) == -1) {
+          muzzy_errno();
+          break;
+        }
+      }
+
+      if (color) {
+        muzzy_color(self->cond_out, MUZZY_COLOR_OFF);
+        if (fputs(self->cond_out, self->out_to) == -1) {
+          muzzy_errno();
+          break;
+        }
       }
     }
 

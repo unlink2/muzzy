@@ -23,6 +23,7 @@ struct muzzy_config {
   bool no_color;
   bool no_echo;
   bool no_cmd_out;
+  bool only_ok;
 
   const char *out_path;
 };
