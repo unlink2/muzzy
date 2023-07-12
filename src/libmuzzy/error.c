@@ -21,6 +21,9 @@ const char *muzzy_err_to_str(enum muzzy_error self) {
     return "Pipe error";
   case MUZZY_ERR_FORK:
     return "Fork error";
+  case MUZZY_ERR_UNTERMINATED_TOKEN:
+    return "Unterminated token";
+    break;
   }
 
   return "Unknown Error";
