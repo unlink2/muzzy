@@ -25,6 +25,9 @@
 // run the command provided and apply all comparisons
 // finally it will output based on the config
 // several attempts can run indipendently in threads
+// TODO: Split this struct into shared and unique parts
+// shared will be shared across threads whereas unique parts will be created
+// for each thread
 struct muzzy_attempt {
   // vec of word lists
   struct muzzy_vec word_lists;
