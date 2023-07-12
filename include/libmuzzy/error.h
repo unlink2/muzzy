@@ -4,6 +4,7 @@
 #include "libmuzzy/macros.h"
 #include <stddef.h>
 #include <errno.h>
+#include <stdio.h>
 
 /**
  * Error is a error type struct that provides
@@ -34,6 +35,7 @@ enum muzzy_error {
 };
 
 const char *muzzy_err_to_str(enum muzzy_error self);
+void muzzy_err_print(FILE *f);
 
 #define muzzy_err_msg(...) sprintf(muzzy_err_msg_ptr(), __VA_ARGS__);
 

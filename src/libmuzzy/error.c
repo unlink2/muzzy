@@ -12,10 +12,40 @@ const char *muzzy_err_to_str(enum muzzy_error self) {
   case MUZZY_OK:
     return "OK";
   case MUZZY_ERRNO:
-    return strerror(errno); // NOLINT
+    return "Errno";
+  case MUZZY_ERR_LIST_LEN_ZERO:
+    return "List lenght 0";
+  case MUZZY_ERR_COND_PARSE:
+    return "Error parsing condition";
+  case MUZZY_ERR_PIPE:
+    return "Pipe error";
+  case MUZZY_ERR_FORK:
+    return "Fork error";
   }
 
   return "Unknown Error";
+}
+
+void muzzy_err_print(FILE *f) {
+  if (!muzzy_err()) {
+    return;
+  }
+
+  enum muzzy_error err = muzzy_err();
+  switch (err) {
+  case MUZZY_ERR_COND_PARSE:
+    fprintf(f, "%s", (char *)muzzy_err_details_ptr());
+    break;
+  case MUZZY_ERR_PIPE:
+  case MUZZY_ERR_FORK:
+  case MUZZY_ERRNO:
+    fprintf(f, "%s", strerror(errno)); // NOLINT
+    break;
+  default:
+    break;
+  }
+  fprintf(f, " '%s' ", muzzy_err_to_str(err));
+  fprintf(f, "\n");
 }
 
 void muzzy_err_set(enum muzzy_error err) { MUZZY_ERR = err; }

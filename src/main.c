@@ -13,9 +13,7 @@ int main(int argc, char **argv) {
     muzzy_attempt_run(&attempt);
     muzzy_attempt_free(&attempt);
   }
-  if (muzzy_err()) {
-    fprintf(stderr, "%s\n", muzzy_err_to_str(muzzy_err()));
-  }
+  muzzy_err_print(stderr);
 
   return muzzy_err();
 }

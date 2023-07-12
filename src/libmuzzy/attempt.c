@@ -245,6 +245,8 @@ int muzzy_attempt_exec(struct muzzy_attempt *self) {
 
         muzzy_buffer_adv(&self->out, n_read);
       } while (n_read);
+
+      close(link[0]);
     }
   }
 
