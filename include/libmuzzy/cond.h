@@ -26,9 +26,6 @@ struct muzzy_cond {
   union {
     int exit_code;
   };
-  // TODO: implement and, and or tree of conditions
-  // example:
-  // --exit-code --gt 0 --and --exit-code --lt 2
 };
 
 struct muzzy_cond muzzy_cond_init(void);
