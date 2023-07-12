@@ -29,6 +29,7 @@ struct muzzy_cond muzzy_cond_from(const char *expr) {
   enum muzzy_cond_op op = MUZZY_COND_FALSE;
   enum muzzy_cond_con con = MUZZY_COND_OR;
   int int_val = 0;
+  char *s_val = NULL;
 
   // check for not
   if (strncmp(buf, "not", len) == 0) {
@@ -73,6 +74,7 @@ struct muzzy_cond muzzy_cond_from(const char *expr) {
     expr = muzzy_tok_str(buf, expr, len);
     break;
   case MUZZY_COND_CONTAINS:
+    s_val = strdup(buf);
     expr = muzzy_tok_str(buf, expr, len);
     break;
   }
@@ -100,8 +102,12 @@ struct muzzy_cond muzzy_cond_from(const char *expr) {
     self = muzzy_cond_init_ec(op, con, not, int_val);
     break;
   case MUZZY_COND_CONTAINS:
-    self = muzzy_cond_init_out_cmp(op, con, not, buf);
+    self = muzzy_cond_init_out_cmp(op, con, not, s_val);
     break;
+  }
+
+  if (s_val) {
+    free(s_val);
   }
 
   return self;
