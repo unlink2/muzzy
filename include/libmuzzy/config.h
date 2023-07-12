@@ -22,6 +22,7 @@ struct muzzy_config {
   int32_t n_runs;
   bool no_color;
   bool no_echo;
+  bool no_cmd_out;
 
   const char *out_path;
 };

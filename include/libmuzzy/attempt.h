@@ -58,6 +58,7 @@ struct muzzy_attempt {
   bool dry;
   bool no_color;
   bool no_echo_cmd;
+  bool no_cmd_out;
 };
 
 struct muzzy_attempt muzzy_attempt_init(void);

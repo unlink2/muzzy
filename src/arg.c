@@ -28,6 +28,7 @@ struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
   struct arg_file *rand_file = NULL;
   struct arg_lit *dry = NULL;
   struct arg_lit *no_echo = NULL;
+  struct arg_lit *no_cmd_out = NULL;
 
   struct arg_file *output = NULL;
 
@@ -62,6 +63,7 @@ struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
                             "Defaults to '/dev/urandom'."),
 
       dry = arg_lit0(NULL, "dry", "Run without executing an actual command"),
+      no_cmd_out = arg_lit0(NULL, "nocmdout", "Disable command output"),
       no_echo = arg_lit0(NULL, "noecho",
                          "Do not display command that is about to be executed"),
       output = arg_file0("o", "output", "FILE", "Output file"),
@@ -211,6 +213,7 @@ struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
 
   cfg.no_color = no_color->count > 0;
   cfg.no_echo = no_echo->count > 0;
+  cfg.no_cmd_out = no_cmd_out->count > 0;
 
   arg_freetable(argtable, sizeof(argtable) / sizeof(argtable[0]));
 

@@ -63,6 +63,8 @@ struct muzzy_attempt muzzy_attempt_from_cfg(struct muzzy_config *cfg) {
   self.dry = cfg->dry;
   self.word_lists = cfg->word_lists;
   self.no_color = cfg->no_color;
+  self.no_echo_cmd = cfg->no_echo;
+  self.no_cmd_out = cfg->no_cmd_out;
 
   muzzy_dbg("Delay %d ms\nN-runs: %d\nDry: %d\n", self.delay_ms, self.n_runs,
             self.dry);
@@ -186,11 +188,8 @@ int muzzy_attempt_exec(struct muzzy_attempt *self) {
   }
 
   int status = 0;
-  if (self->dry || !self->no_echo_cmd) {
+  if (self->dry) {
     const char **arg = args_fuzzed;
-
-    memcpy(muzzy_buffer_next(&self->out, 1), ">", 1);
-    muzzy_buffer_adv(&self->out, 1);
 
     while (*arg) {
       size_t len = strlen(*arg);
@@ -203,12 +202,8 @@ int muzzy_attempt_exec(struct muzzy_attempt *self) {
     memcpy(muzzy_buffer_next(&self->out, 1), "\n", 1);
     muzzy_buffer_adv(&self->out, 1);
 
-    if (self->dry) {
-      muzzy_buffer_null_term(&self->out);
-    }
-  }
-
-  if (!self->dry) {
+    muzzy_buffer_null_term(&self->out);
+  } else {
     int link[2];
     if (pipe(link) == -1) { // NOLINT
       muzzy_err_set(MUZZY_ERR_PIPE);
@@ -303,14 +298,28 @@ int muzzy_attempt_run(struct muzzy_attempt *self) {
     }
 
     // output
+    if (!self->no_echo_cmd) {
+      const char **arg = self->args_fuzzed;
+      fputs(">", self->out_to);
+      while (*arg) {
+        fputs(*arg, self->out_to);
+        fputs(" ", self->out_to);
+        arg++;
+      }
+      fputs("\n", self->out_to);
+    }
+
     if (fputs(self->cond_out, self->out_to) == -1) {
       muzzy_errno();
       break;
     }
-    if (fwrite(muzzy_buffer_start(&self->out), 1, muzzy_buffer_len(&self->out),
-               self->out_to) == -1) {
-      muzzy_errno();
-      break;
+
+    if (!self->no_cmd_out) {
+      if (fwrite(muzzy_buffer_start(&self->out), 1,
+                 muzzy_buffer_len(&self->out), self->out_to) == -1) {
+        muzzy_errno();
+        break;
+      }
     }
 
     if (color) {
