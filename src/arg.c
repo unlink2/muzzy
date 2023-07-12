@@ -12,6 +12,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+const char *COND_DOC =
+    "Conditions will evaluate the output of a command.\nOperators:\n\n>\tExit "
+    "code greater than\n<\tExit code less than\n\t>=\tExit code greater or "
+    "equal\n<=\tExit code less or equal\n==\tExit code "
+    "equal\ncontains\tCommand output contains\n\nconnectors:\n\nand\tRequire "
+    "the next expression to be true as well\nor\t(Default)\n\nExamples:\n\n> 1 "
+    "and <= 3\ncontains 'example string'\n";
+
 struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
   struct arg_lit *verb = NULL;
   struct arg_lit *help = NULL;
@@ -37,6 +45,7 @@ struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
   struct arg_str *condition = NULL;
 
   struct arg_str *command = NULL;
+  struct arg_lit *expl_cond = NULL;
 
   // arg end stores errors
   struct arg_end *end = NULL;
@@ -67,6 +76,7 @@ struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
                             "Defaults to '/dev/urandom'."),
 
       dry = arg_lit0(NULL, "dry", "Run without executing an actual command"),
+      expl_cond = arg_lit0(NULL, "explain-condition", "Explain conditions"),
       only_ok =
           arg_lit0(NULL, "ok", "Only print messages that match all conditions"),
       no_cmd_out = arg_lit0(NULL, "nocmdout", "Disable command output"),
@@ -74,8 +84,8 @@ struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
                          "Do not display command that is about to be executed"),
       output = arg_file0("o", "output", "FILE", "Output file"),
 
-      condition =
-          arg_strn("c", "cond", "cond", 0, 4096, "Condition to check for"),
+      condition = arg_strn("c", "cond", "cond", 0, 4096,
+                           "Use --explain-condition for more information"),
 
       command = arg_strn(NULL, NULL, "", 1, 4096, "The command to execute"),
       end = arg_end(20),
@@ -99,6 +109,11 @@ struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
     arg_print_syntax(stdout, argtable, "\n");
     printf("%s\n\n", short_desc);
     arg_print_glossary(stdout, argtable, "  %-25s %s\n");
+    goto exit;
+  }
+
+  if (expl_cond->count) {
+    printf("%s", COND_DOC);
     goto exit;
   }
 
