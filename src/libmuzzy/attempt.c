@@ -181,7 +181,7 @@ const char **muzzy_attempt_fuzz_args(const char **args_fuzzed,
   muzzy_attempt_args_to_buffer(args_buf, args);
   for (size_t i = 0; i < word_lists->len; i++) {
     struct muzzy_words *word_list = muzzy_vec_get(word_lists, i);
-    muzzy_attempt_words(i, dst_buf, args_buf, word_list, rand, rand_cfg);
+    muzzy_attempt_words((int)i, dst_buf, args_buf, word_list, rand, rand_cfg);
     if (muzzy_err()) {
       return args_fuzzed;
     }

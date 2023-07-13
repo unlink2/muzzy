@@ -52,27 +52,19 @@ int64_t muzzy_lrand(int id, void *data) {
 
 // TODO: test this implementation
 int64_t muzzy_iter_rand(int id, void *data) {
-  if (id > MUZZY_RAND_ITER_MAX) {
+  struct muzzy_rand_cfg *cfg = data;
+  if (id > MUZZY_RAND_ITER_MAX || cfg->next_after == 0) {
     return 0;
   }
-  struct muzzy_rand_cfg *cfg = data;
 
   int64_t next = cfg->iter[id];
 
-  if (id == 0) {
+  if (id == 0 ||
+      (cfg->iter[id - 1] % cfg->next_after == 0 && cfg->iter[id - 1])) {
     cfg->iter[id]++;
   }
 
-  if ((cfg->iter[id] + 1) % cfg->next_after == 0) {
-    if (cfg->iter[id] != 0) {
-      cfg->iter[(id + 1)]++;
-    }
-
-    if (id != 0) {
-      cfg->iter[id] = 0;
-    }
-  }
-
+  printf("%d: %d\n", id, next % 4);
   return next;
 }
 
