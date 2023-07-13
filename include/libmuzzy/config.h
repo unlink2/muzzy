@@ -20,6 +20,7 @@ struct muzzy_config {
   bool dry;
   int32_t delay_ms;
   int32_t n_runs;
+  int32_t n_threads;
   bool no_color;
   bool no_echo;
   bool no_cmd_out;

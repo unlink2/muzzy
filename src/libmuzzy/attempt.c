@@ -9,21 +9,45 @@
 #include "libmuzzy/cond.h"
 #include "libmuzzy/color.h"
 #include <limits.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <threads.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <stdatomic.h>
 
 struct muzzy_attempt muzzy_attempt_init(void) {
   struct muzzy_attempt self;
   memset(&self, 0, sizeof(self));
 
+  self.out_to = stdout;
+  self.conditions = muzzy_vec_init(sizeof(struct muzzy_cond));
+
+  return self;
+}
+
+struct muzzy_attempt_var muzzy_attempt_var_init(size_t args_len) {
+  struct muzzy_attempt_var self;
+  memset(&self, 0, sizeof(self));
+
   self.out = muzzy_buffer_init();
   self.buf0 = muzzy_vec_init(sizeof(struct muzzy_buffer));
   self.buf1 = muzzy_vec_init(sizeof(struct muzzy_buffer));
-  self.out_to = stdout;
-  self.conditions = muzzy_vec_init(sizeof(struct muzzy_cond));
+
+  for (size_t i = 0; i < args_len; i++) {
+    // push the right amount of buffers to the target
+    struct muzzy_buffer b0 = muzzy_buffer_init();
+    struct muzzy_buffer b1 = muzzy_buffer_init();
+
+    muzzy_vec_push(&self.buf0, &b0);
+    muzzy_vec_push(&self.buf1, &b1);
+  }
+
+  // result buffer used for storage of the actual pointers
+  self.args_fuzzed = malloc(sizeof(char *) * (args_len + 1));
+  memset(self.args_fuzzed, 0, sizeof(char *) * (args_len + 1));
 
   return self;
 }
@@ -41,22 +65,14 @@ struct muzzy_attempt muzzy_attempt_from_cfg(struct muzzy_config *cfg) {
   size_t args_len = 1; // start at 1 to insert NULL in the end
   const char **arg = cfg->args;
   while (arg[0]) {
-    // push the right amount of buffers to the target
-    struct muzzy_buffer b0 = muzzy_buffer_init();
-    struct muzzy_buffer b1 = muzzy_buffer_init();
-
-    muzzy_vec_push(&self.buf0, &b0);
-    muzzy_vec_push(&self.buf1, &b1);
-
     arg++;
     args_len++;
   }
 
-  // result buffer used for storage of the actual pointers
-  self.args_fuzzed = malloc(sizeof(char *) * args_len + 1);
-  memset(self.args_fuzzed, 0, sizeof(char *) * args_len + 1);
+  self.args_len = args_len;
 
   self.n_runs = cfg->n_runs;
+  self.n_threads = cfg->n_threads;
   self.delay_ms = cfg->delay_ms;
   self.rand_cfg = cfg->rand_cfg;
   self.rand = cfg->rand;
@@ -67,8 +83,8 @@ struct muzzy_attempt muzzy_attempt_from_cfg(struct muzzy_config *cfg) {
   self.no_cmd_out = cfg->no_cmd_out;
   self.only_ok = cfg->only_ok;
 
-  muzzy_dbg("Delay %d ms\nN-runs: %d\nDry: %d\n", self.delay_ms, self.n_runs,
-            self.dry);
+  muzzy_dbg("Delay %d ms\nN-runs: %d\nThreads: %d\nDry: %d\n", self.delay_ms,
+            self.n_runs, self.n_threads, self.dry);
 
   if (strcmp(MUZZY_STDSTREAM_PATH, cfg->out_path) == 0) {
     self.out_to = stdout;
@@ -180,10 +196,11 @@ const char **muzzy_attempt_fuzz_args(const char **args_fuzzed,
   return args_fuzzed;
 }
 
-int muzzy_attempt_exec(struct muzzy_attempt *self) {
+int muzzy_attempt_exec(struct muzzy_attempt *self,
+                       struct muzzy_attempt_var *var) {
   const char **args_fuzzed = muzzy_attempt_fuzz_args(
-      self->args_fuzzed, self->args, &self->word_lists, &self->buf0,
-      &self->buf1, self->rand, &self->rand_cfg);
+      var->args_fuzzed, self->args, &self->word_lists, &var->buf0, &var->buf1,
+      self->rand, &self->rand_cfg);
   if (muzzy_err()) {
     return -1;
   }
@@ -194,16 +211,16 @@ int muzzy_attempt_exec(struct muzzy_attempt *self) {
 
     while (*arg) {
       size_t len = strlen(*arg);
-      memcpy(muzzy_buffer_next(&self->out, len), *arg, len);
-      muzzy_buffer_adv(&self->out, len);
-      memcpy(muzzy_buffer_next(&self->out, 1), " ", 1);
-      muzzy_buffer_adv(&self->out, 1);
+      memcpy(muzzy_buffer_next(&var->out, len), *arg, len);
+      muzzy_buffer_adv(&var->out, len);
+      memcpy(muzzy_buffer_next(&var->out, 1), " ", 1);
+      muzzy_buffer_adv(&var->out, 1);
       arg++;
     }
-    memcpy(muzzy_buffer_next(&self->out, 1), "\n", 1);
-    muzzy_buffer_adv(&self->out, 1);
+    memcpy(muzzy_buffer_next(&var->out, 1), "\n", 1);
+    muzzy_buffer_adv(&var->out, 1);
 
-    muzzy_buffer_null_term(&self->out);
+    muzzy_buffer_null_term(&var->out);
   } else {
     int link[2];
     if (pipe(link) == -1) { // NOLINT
@@ -225,7 +242,7 @@ int muzzy_attempt_exec(struct muzzy_attempt *self) {
       close(link[0]);
       close(link[1]);
 
-      execv(self->executable, (char **)self->args_fuzzed);
+      execv(self->executable, (char **)var->args_fuzzed);
       // this should never be called!
       muzzy_panic("'%s': No such file or directory\n", // NOLINT
                   self->executable);                   // NOLINT
@@ -238,7 +255,7 @@ int muzzy_attempt_exec(struct muzzy_attempt *self) {
       int64_t n_read = 0;
       do {
         // read from fd until end or error
-        uint8_t *next = muzzy_buffer_next(&self->out, MUZZY_BUF_READ);
+        uint8_t *next = muzzy_buffer_next(&var->out, MUZZY_BUF_READ);
         muzzy_dbg_assert(next);
 
         n_read = read(link[0], next, MUZZY_BUF_READ);
@@ -247,7 +264,7 @@ int muzzy_attempt_exec(struct muzzy_attempt *self) {
           return EXIT_FAILURE;
         }
 
-        muzzy_buffer_adv(&self->out, n_read);
+        muzzy_buffer_adv(&var->out, n_read);
       } while (n_read);
 
       close(link[0]);
@@ -257,20 +274,14 @@ int muzzy_attempt_exec(struct muzzy_attempt *self) {
   return status;
 }
 
-void muzzy_attempt_out(struct muzzy_attempt *self) {
-  if (fwrite(muzzy_buffer_start(&self->out), 1, muzzy_buffer_len(&self->out),
-             self->out_to) == -1) {
-    muzzy_errno();
-  }
-}
-
-int muzzy_attempt_run(struct muzzy_attempt *self) {
+int muzzy_attempt_run_sync(struct muzzy_attempt *self,
+                           struct muzzy_attempt_var *var) {
   int act_exit_code = 0;
-  size_t n_runs = self->n_runs;
+  atomic_int n_runs = self->n_runs;
   while (n_runs == MUZZY_N_RUNS_INF || n_runs--) {
-    muzzy_buffer_clear(&self->out);
+    muzzy_buffer_clear(&var->out);
     // act
-    act_exit_code = muzzy_attempt_exec(self);
+    act_exit_code = muzzy_attempt_exec(self, var);
     if (muzzy_err()) {
       break;
     }
@@ -280,36 +291,36 @@ int muzzy_attempt_run(struct muzzy_attempt *self) {
     bool color = isatty(fd) && !self->no_color;
     bool ok = true;
     if (self->conditions.len == 0) {
-      self->cond_out[0] = '\0';
+      var->cond_out[0] = '\0';
     } else if (muzzy_conds_check(&self->conditions, act_exit_code,
-                                 (const char *)muzzy_buffer_start(&self->out),
+                                 (const char *)muzzy_buffer_start(&var->out),
                                  0)) {
       if (color) {
-        muzzy_color(self->cond_out, MUZZY_COLOR_GREEN);
+        muzzy_color(var->cond_out, MUZZY_COLOR_GREEN);
       } else {
-        self->cond_out[0] = '+';
-        self->cond_out[1] = ' ';
+        var->cond_out[0] = '+';
+        var->cond_out[1] = ' ';
       }
       ok = true;
     } else {
       if (color) {
-        muzzy_color(self->cond_out, MUZZY_COLOR_RED);
+        muzzy_color(var->cond_out, MUZZY_COLOR_RED);
       } else {
-        self->cond_out[0] = '-';
-        self->cond_out[1] = ' ';
+        var->cond_out[0] = '-';
+        var->cond_out[1] = ' ';
       }
       ok = false;
     }
 
     if (!self->only_ok || ok) {
       // output
-      if (fputs(self->cond_out, self->out_to) == -1) {
+      if (fputs(var->cond_out, self->out_to) == -1) {
         muzzy_errno();
         break;
       }
 
       if (!self->no_echo_cmd) {
-        const char **arg = self->args_fuzzed;
+        const char **arg = var->args_fuzzed;
         fputs(">", self->out_to);
         while (*arg) {
           fputs(*arg, self->out_to);
@@ -320,16 +331,16 @@ int muzzy_attempt_run(struct muzzy_attempt *self) {
       }
 
       if (!self->no_cmd_out) {
-        if (fwrite(muzzy_buffer_start(&self->out), 1,
-                   muzzy_buffer_len(&self->out), self->out_to) == -1) {
+        if (fwrite(muzzy_buffer_start(&var->out), 1,
+                   muzzy_buffer_len(&var->out), self->out_to) == -1) {
           muzzy_errno();
           break;
         }
       }
 
       if (color) {
-        muzzy_color(self->cond_out, MUZZY_COLOR_OFF);
-        if (fputs(self->cond_out, self->out_to) == -1) {
+        muzzy_color(var->cond_out, MUZZY_COLOR_OFF);
+        if (fputs(var->cond_out, self->out_to) == -1) {
           muzzy_errno();
           break;
         }
@@ -341,16 +352,63 @@ int muzzy_attempt_run(struct muzzy_attempt *self) {
     }
   }
 
+  muzzy_err_print(stderr);
+
   return act_exit_code;
 }
 
+int muzzy_attempt_run_async(void *data) {
+  struct muzzy_attempt_var *var = data;
+
+  return muzzy_attempt_run_sync(var->attempt, var);
+}
+
+int muzzy_attempt_run(struct muzzy_attempt *self) {
+  if (self->n_threads) {
+    int threads_exit_code = 0;
+
+    thrd_t threads[MUZZY_ATTEMPT_THREADS_MAX];
+    struct muzzy_attempt_var vars[MUZZY_ATTEMPT_THREADS_MAX];
+
+    // spawn
+    for (size_t i = 0; i < self->n_threads; i++) {
+      vars[i] = muzzy_attempt_var_init(self->args_len);
+      vars[i].attempt = self;
+
+      int rc = thrd_create(&threads[i], muzzy_attempt_run_async, &vars[i]);
+      if (rc != thrd_success) {
+        muzzy_err_set(MUZZY_ERR_THREAD);
+      }
+    }
+
+    // join threads
+    for (size_t i = 0; i < self->n_threads; i++) {
+      int ec = 0;
+      thrd_join(threads[i], &ec);
+      if (ec) {
+        threads_exit_code = ec;
+      }
+    }
+
+    // free vats
+    for (size_t i = 0; i < self->n_threads; i++) {
+      muzzy_attempt_var_free(&vars[i]);
+    }
+
+    return threads_exit_code;
+  } else {
+    struct muzzy_attempt_var var = muzzy_attempt_var_init(self->args_len);
+    int act_exit_code = muzzy_attempt_run_sync(self, &var);
+    muzzy_attempt_var_free(&var);
+
+    return act_exit_code;
+  }
+}
+
 void muzzy_attempt_free(struct muzzy_attempt *self) {
-  muzzy_buf_vec_free(&self->buf0);
-  muzzy_buf_vec_free(&self->buf1);
   muzzy_cond_vec_free(&self->conditions);
 
   muzzy_rand_cfg_free(&self->rand_cfg);
-  muzzy_buffer_free(&self->out);
 
   for (size_t i = 0; i < self->word_lists.len; i++) {
     muzzy_words_free(muzzy_vec_get(&self->word_lists, i));
@@ -361,8 +419,6 @@ void muzzy_attempt_free(struct muzzy_attempt *self) {
     fclose(self->out_to);
   }
 
-  free(self->args_fuzzed);
-
   const char **arg = self->args;
   while (arg && *arg) {
     free((void *)*arg);
@@ -371,4 +427,12 @@ void muzzy_attempt_free(struct muzzy_attempt *self) {
   free(self->args);
 
   free((void *)self->executable);
+}
+
+void muzzy_attempt_var_free(struct muzzy_attempt_var *self) {
+  muzzy_buf_vec_free(&self->buf0);
+  muzzy_buf_vec_free(&self->buf1);
+
+  muzzy_buffer_free(&self->out);
+  free(self->args_fuzzed);
 }

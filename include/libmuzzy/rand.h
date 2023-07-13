@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdatomic.h>
 
 typedef int64_t (*muzzy_rand)(void *data);
 
@@ -14,7 +15,7 @@ struct muzzy_rand_cfg {
     struct {
       const char *src_path;
       FILE *fp;
-      int64_t linear;
+      atomic_int linear;
     };
     void *custom;
   };

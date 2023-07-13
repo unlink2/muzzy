@@ -20,6 +20,8 @@
 
 #define MUZZY_BUF_READ 4096
 
+#define MUZZY_ATTEMPT_THREADS_MAX 64
+
 // an attempt is the execution enviornment for a fuzzer
 // execute the fuzzer based in all word lists,
 // run the command provided and apply all comparisons
@@ -29,21 +31,6 @@
 // shared will be shared across threads whereas unique parts will be created
 // for each thread
 struct muzzy_attempt {
-  // variable data
-  struct {
-
-    // NULL terminated args array that is used
-    // as an input for exec
-    const char **args_fuzzed;
-
-    // a/b buffer of muzzy_buffers
-    struct muzzy_vec buf0;
-    struct muzzy_vec buf1;
-
-    char cond_out[MUZZY_COND_OUT_LEN];
-    struct muzzy_buffer out;
-  };
-
   // vec of word lists
   struct muzzy_vec word_lists;
   struct muzzy_rand_cfg rand_cfg;
@@ -52,6 +39,7 @@ struct muzzy_attempt {
 
   // NULL terminated input arguments
   const char **args;
+  size_t args_len;
 
   // dump out to this file
   FILE *out_to;
@@ -60,8 +48,11 @@ struct muzzy_attempt {
   // conditions (muzzy_cond)
   struct muzzy_vec cond_list;
 
-  int32_t n_runs;
+  atomic_int n_runs;
   int32_t delay_ms;
+
+  int32_t n_threads;
+
   bool dry;
   bool no_color;
   bool no_echo_cmd;
@@ -69,7 +60,23 @@ struct muzzy_attempt {
   bool only_ok;
 };
 
+struct muzzy_attempt_var {
+  // NULL terminated args array that is used
+  // as an input for exec
+  const char **args_fuzzed;
+
+  // a/b buffer of muzzy_buffers
+  struct muzzy_vec buf0;
+  struct muzzy_vec buf1;
+
+  char cond_out[MUZZY_COND_OUT_LEN];
+  struct muzzy_buffer out;
+
+  struct muzzy_attempt *attempt;
+};
+
 struct muzzy_attempt muzzy_attempt_init(void);
+struct muzzy_attempt_var muzzy_attempt_var_init(size_t args_len);
 
 struct muzzy_attempt muzzy_attempt_from_cfg(struct muzzy_config *cfg);
 
@@ -102,15 +109,17 @@ const char **muzzy_attempt_fuzz_args(const char **args_fuzzed,
 // places the src array in a buffer vec
 void muzzy_attempt_args_to_buffer(struct muzzy_vec *dst, const char **src);
 
+int muzzy_attempt_run_sync(struct muzzy_attempt *self,
+                           struct muzzy_attempt_var *var);
+
 // runs a single execution
 // run a new attempt either sync or in a thread with the attempt configuration.
 // Note: Passing an attempt configuration to more than one run call is
 // not safe!
 int muzzy_attempt_run(struct muzzy_attempt *self);
 
-// runs until an exit condition is met
-int muzzy_attempt_run_all(struct muzzy_attempt *self);
-
 void muzzy_attempt_free(struct muzzy_attempt *self);
+
+void muzzy_attempt_var_free(struct muzzy_attempt_var *self);
 
 #endif

@@ -34,6 +34,7 @@ struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
   struct arg_lit *linear = NULL;
   struct arg_int *seed_rand = NULL;
   struct arg_int *n_runs = NULL;
+  struct arg_int *n_threads = NULL;
   struct arg_file *rand_file = NULL;
   struct arg_lit *dry = NULL;
   struct arg_lit *no_echo = NULL;
@@ -71,6 +72,7 @@ struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
           arg_lit0(NULL, "linear", "Use incrementing number instead of rand."),
       seed_rand = arg_int0(NULL, "seed", "INT", "Seed the built-in rand."),
       n_runs = arg_int0("n", "nruns", "INT", "Amount of attempts to run"),
+      n_threads = arg_int0("t", "threads", "INT", "Amount of threads to run"),
       rand_file = arg_file0(NULL, "frand", "FILE",
                             "The file to read from as a source of randomness. "
                             "Defaults to '/dev/urandom'."),
@@ -239,6 +241,10 @@ struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
   cfg.no_echo = no_echo->count > 0;
   cfg.no_cmd_out = no_cmd_out->count > 0;
   cfg.only_ok = only_ok->count > 0;
+
+  if (n_threads->count) {
+    cfg.n_threads = n_threads->ival[0];
+  }
 
   arg_freetable(argtable, sizeof(argtable) / sizeof(argtable[0]));
 

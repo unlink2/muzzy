@@ -24,6 +24,8 @@ const char *muzzy_err_to_str(enum muzzy_error self) {
   case MUZZY_ERR_UNTERMINATED_TOKEN:
     return "Unterminated token";
     break;
+  case MUZZY_ERR_THREAD:
+    return "Unable to spawn thread";
   }
 
   return "Unknown Error";
@@ -49,6 +51,8 @@ void muzzy_err_print(FILE *f) {
   }
   fprintf(f, " '%s' ", muzzy_err_to_str(err));
   fprintf(f, "\n");
+
+  muzzy_err_set(MUZZY_OK);
 }
 
 void muzzy_err_set(enum muzzy_error err) { MUZZY_ERR = err; }
