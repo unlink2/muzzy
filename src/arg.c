@@ -57,9 +57,10 @@ struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
           arg_litn(NULL, "version", 0, 1, "display version info and exit"),
       verb = arg_litn("v", "verbose", 0, MUZZY_LOG_LEVEL_DBG, "verbose output"),
 
-      words = arg_file1("w", "words", "word list", "Read a word list file"),
-      replace = arg_str0(
-          "r", "replace", "replace string",
+      words = arg_filen("w", "words", "word list", 1, 1024,
+                        "Read a word list file"),
+      replace = arg_strn(
+          "r", "replace", "replace string", 0, 1024,
           "Add a replace string. These are read in order for each word list."),
 
       no_sh =
