@@ -64,7 +64,6 @@ int64_t muzzy_iter_rand(int id, void *data) {
     cfg->iter[id]++;
   }
 
-  printf("%d: %d\n", id, next % 4);
   return next;
 }
 
