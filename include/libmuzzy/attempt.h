@@ -20,6 +20,8 @@
 
 #define MUZZY_BUF_READ 4096
 
+#define MUZZY_ATTEMPT_THREADS_MAX 64
+
 struct muzzy_attempt_var {
   // NULL terminated args array that is used
   // as an input for exec
@@ -61,6 +63,9 @@ struct muzzy_attempt {
 
   int32_t n_runs;
   int32_t delay_ms;
+
+  int32_t n_threads;
+
   bool dry;
   bool no_color;
   bool no_echo_cmd;
@@ -101,6 +106,9 @@ const char **muzzy_attempt_fuzz_args(const char **args_fuzzed,
 
 // places the src array in a buffer vec
 void muzzy_attempt_args_to_buffer(struct muzzy_vec *dst, const char **src);
+
+int muzzy_attempt_run_sync(struct muzzy_attempt *self,
+                           struct muzzy_attempt_var *var);
 
 // runs a single execution
 // run a new attempt either sync or in a thread with the attempt configuration.

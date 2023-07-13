@@ -14,6 +14,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <stdatomic.h>
 
 struct muzzy_attempt muzzy_attempt_init(void) {
   struct muzzy_attempt self;
@@ -270,15 +271,14 @@ int muzzy_attempt_exec(struct muzzy_attempt *self,
   return status;
 }
 
-int muzzy_attempt_run(struct muzzy_attempt *self) {
-  struct muzzy_attempt_var var = muzzy_attempt_var_init(self->args_len);
-
+int muzzy_attempt_run_sync(struct muzzy_attempt *self,
+                           struct muzzy_attempt_var *var) {
   int act_exit_code = 0;
-  size_t n_runs = self->n_runs;
+  atomic_int n_runs = self->n_runs;
   while (n_runs == MUZZY_N_RUNS_INF || n_runs--) {
-    muzzy_buffer_clear(&var.out);
+    muzzy_buffer_clear(&var->out);
     // act
-    act_exit_code = muzzy_attempt_exec(self, &var);
+    act_exit_code = muzzy_attempt_exec(self, var);
     if (muzzy_err()) {
       break;
     }
@@ -288,36 +288,36 @@ int muzzy_attempt_run(struct muzzy_attempt *self) {
     bool color = isatty(fd) && !self->no_color;
     bool ok = true;
     if (self->conditions.len == 0) {
-      var.cond_out[0] = '\0';
+      var->cond_out[0] = '\0';
     } else if (muzzy_conds_check(&self->conditions, act_exit_code,
-                                 (const char *)muzzy_buffer_start(&var.out),
+                                 (const char *)muzzy_buffer_start(&var->out),
                                  0)) {
       if (color) {
-        muzzy_color(var.cond_out, MUZZY_COLOR_GREEN);
+        muzzy_color(var->cond_out, MUZZY_COLOR_GREEN);
       } else {
-        var.cond_out[0] = '+';
-        var.cond_out[1] = ' ';
+        var->cond_out[0] = '+';
+        var->cond_out[1] = ' ';
       }
       ok = true;
     } else {
       if (color) {
-        muzzy_color(var.cond_out, MUZZY_COLOR_RED);
+        muzzy_color(var->cond_out, MUZZY_COLOR_RED);
       } else {
-        var.cond_out[0] = '-';
-        var.cond_out[1] = ' ';
+        var->cond_out[0] = '-';
+        var->cond_out[1] = ' ';
       }
       ok = false;
     }
 
     if (!self->only_ok || ok) {
       // output
-      if (fputs(var.cond_out, self->out_to) == -1) {
+      if (fputs(var->cond_out, self->out_to) == -1) {
         muzzy_errno();
         break;
       }
 
       if (!self->no_echo_cmd) {
-        const char **arg = var.args_fuzzed;
+        const char **arg = var->args_fuzzed;
         fputs(">", self->out_to);
         while (*arg) {
           fputs(*arg, self->out_to);
@@ -328,16 +328,16 @@ int muzzy_attempt_run(struct muzzy_attempt *self) {
       }
 
       if (!self->no_cmd_out) {
-        if (fwrite(muzzy_buffer_start(&var.out), 1, muzzy_buffer_len(&var.out),
-                   self->out_to) == -1) {
+        if (fwrite(muzzy_buffer_start(&var->out), 1,
+                   muzzy_buffer_len(&var->out), self->out_to) == -1) {
           muzzy_errno();
           break;
         }
       }
 
       if (color) {
-        muzzy_color(var.cond_out, MUZZY_COLOR_OFF);
-        if (fputs(var.cond_out, self->out_to) == -1) {
+        muzzy_color(var->cond_out, MUZZY_COLOR_OFF);
+        if (fputs(var->cond_out, self->out_to) == -1) {
           muzzy_errno();
           break;
         }
@@ -348,7 +348,12 @@ int muzzy_attempt_run(struct muzzy_attempt *self) {
       usleep(self->delay_ms);
     }
   }
+  return act_exit_code;
+}
 
+int muzzy_attempt_run(struct muzzy_attempt *self) {
+  struct muzzy_attempt_var var = muzzy_attempt_var_init(self->args_len);
+  int act_exit_code = muzzy_attempt_run_sync(self, &var);
   muzzy_attempt_var_free(&var);
 
   return act_exit_code;
