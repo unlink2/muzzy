@@ -59,7 +59,7 @@ struct muzzy_words muzzy_words_from_file(const char *path, const char *rep) {
 
 const char *muzzy_words_next(const char **words, int64_t i) { return words[i]; }
 
-int64_t muzzy_rand_always0(void *data) { return 0; }
+int64_t muzzy_rand_always0(int id, void *data) { return 0; }
 
 char *muzzy_word_rep(const char *input, const char *replace, const char *word,
                      ssize_t n, struct muzzy_buffer *buf) {
@@ -92,7 +92,7 @@ char *muzzy_word_rep_rand(const char *input, const char *replace,
     muzzy_buffer_adv(buf, start_len);
 
     // select word
-    int64_t rng = rand(rand_cfg);
+    int64_t rng = rand(0, rand_cfg);
     int64_t index = labs(rng % (int64_t)words_len);
     const char *word = words[index];
 

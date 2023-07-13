@@ -27,9 +27,9 @@ struct muzzy_rand_cfg muzzy_rand_cfg_file(const char *path) {
   return self;
 }
 
-int64_t muzzy_stdrand(void *data) { return rand(); } // NOLINT
+int64_t muzzy_stdrand(int id, void *data) { return rand(); } // NOLINT
 
-int64_t muzzy_frand(void *data) {
+int64_t muzzy_frand(int id, void *data) {
   struct muzzy_rand_cfg *cfg = data;
   int64_t res = 0;
   if (fread(&res, 1, sizeof(int64_t), cfg->fp) == -1) {
@@ -39,7 +39,7 @@ int64_t muzzy_frand(void *data) {
   return res;
 }
 
-int64_t muzzy_lrand(void *data) {
+int64_t muzzy_lrand(int id, void *data) {
   struct muzzy_rand_cfg *cfg = data;
   return cfg->linear++;
 }
