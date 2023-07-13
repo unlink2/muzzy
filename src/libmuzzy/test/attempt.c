@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-int64_t rand_test(void *cfg) { return 1; }
+int64_t rand_test(int id, void *cfg) { return 1; }
 
 void test_attempt_words(void **state) {
   struct muzzy_attempt a = muzzy_attempt_init();
@@ -31,7 +31,7 @@ void test_attempt_words(void **state) {
   muzzy_attempt_args_to_buffer(
       &args, (const char *[]){"Test R1 123", "Arg2 R1 123", NULL});
 
-  muzzy_attempt_words(&dst, &args, &words, rand_test, NULL);
+  muzzy_attempt_words(0, &dst, &args, &words, rand_test, NULL);
   const char **res = muzzy_attempt_to_exec_args(NULL, &dst);
 
   assert_non_null(res);

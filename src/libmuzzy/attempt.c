@@ -101,7 +101,7 @@ struct muzzy_attempt muzzy_attempt_from_cfg(struct muzzy_config *cfg) {
   return self;
 }
 
-struct muzzy_vec *muzzy_attempt_words(struct muzzy_vec *dst,
+struct muzzy_vec *muzzy_attempt_words(int id, struct muzzy_vec *dst,
                                       struct muzzy_vec *args,
                                       struct muzzy_words *wl, muzzy_rand rand,
                                       struct muzzy_rand_cfg *rand_cfg) {
@@ -122,7 +122,7 @@ struct muzzy_vec *muzzy_attempt_words(struct muzzy_vec *dst,
       buf = muzzy_vec_get(dst, i);
     }
 
-    muzzy_word_rep_rand(*arg, wl->replace, wl->list.data, wl->list.len, -1,
+    muzzy_word_rep_rand(id, *arg, wl->replace, wl->list.data, wl->list.len, -1,
                         rand, rand_cfg, buf);
   }
   return dst;
@@ -181,7 +181,7 @@ const char **muzzy_attempt_fuzz_args(const char **args_fuzzed,
   muzzy_attempt_args_to_buffer(args_buf, args);
   for (size_t i = 0; i < word_lists->len; i++) {
     struct muzzy_words *word_list = muzzy_vec_get(word_lists, i);
-    muzzy_attempt_words(dst_buf, args_buf, word_list, rand, rand_cfg);
+    muzzy_attempt_words(i, dst_buf, args_buf, word_list, rand, rand_cfg);
     if (muzzy_err()) {
       return args_fuzzed;
     }

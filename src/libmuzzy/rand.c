@@ -27,6 +27,12 @@ struct muzzy_rand_cfg muzzy_rand_cfg_file(const char *path) {
   return self;
 }
 
+struct muzzy_rand_cfg muzzy_rand_cfg_iter(int max) {
+  struct muzzy_rand_cfg self = muzzy_rand_cfg_init();
+  self.next_after = max;
+  return self;
+}
+
 int64_t muzzy_stdrand(int id, void *data) { return rand(); } // NOLINT
 
 int64_t muzzy_frand(int id, void *data) {
@@ -44,6 +50,32 @@ int64_t muzzy_lrand(int id, void *data) {
   return cfg->linear++;
 }
 
+// TODO: test this implementation
+int64_t muzzy_iter_rand(int id, void *data) {
+  if (id > MUZZY_RAND_ITER_MAX) {
+    return 0;
+  }
+  struct muzzy_rand_cfg *cfg = data;
+
+  int64_t next = cfg->iter[id];
+
+  if (id == 0) {
+    cfg->iter[id]++;
+  }
+
+  if ((cfg->iter[id] + 1) % cfg->next_after == 0) {
+    if (cfg->iter[id] != 0) {
+      cfg->iter[(id + 1)]++;
+    }
+
+    if (id != 0) {
+      cfg->iter[id] = 0;
+    }
+  }
+
+  return next;
+}
+
 void muzzy_rand_cfg_free(struct muzzy_rand_cfg *self) {
   switch (self->kind) {
   case MUZZY_FRAND:
@@ -53,4 +85,5 @@ void muzzy_rand_cfg_free(struct muzzy_rand_cfg *self) {
     break;
   }
 }
+
 void muzzy_frand_cfg_free(struct muzzy_rand_cfg *self) { fclose(self->fp); }

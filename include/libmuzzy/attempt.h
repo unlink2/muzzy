@@ -85,7 +85,7 @@ struct muzzy_attempt muzzy_attempt_from_cfg(struct muzzy_config *cfg);
 // The resulting strings in modified_args_buf will be malloced and need to be
 // freed by the caller.
 // Returned modified_args_buf
-struct muzzy_vec *muzzy_attempt_words(struct muzzy_vec *dst,
+struct muzzy_vec *muzzy_attempt_words(int id, struct muzzy_vec *dst,
                                       struct muzzy_vec *args,
                                       struct muzzy_words *wl, muzzy_rand rand,
                                       struct muzzy_rand_cfg *rand_cfg);

@@ -29,14 +29,19 @@ struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
   struct arg_str *replace = NULL;
   struct arg_lit *no_sh = NULL;
   struct arg_lit *no_color = NULL;
+
   struct arg_int *delay_ms = NULL;
+
   struct arg_lit *stdrand = NULL;
   struct arg_lit *linear = NULL;
   struct arg_int *seed_rand = NULL;
+  struct arg_int *iter_rand = NULL;
+
   struct arg_int *n_runs = NULL;
   struct arg_int *n_threads = NULL;
   struct arg_file *rand_file = NULL;
   struct arg_lit *dry = NULL;
+
   struct arg_lit *no_echo = NULL;
   struct arg_lit *no_cmd_out = NULL;
   struct arg_lit *only_ok = NULL;
@@ -72,6 +77,11 @@ struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
       linear =
           arg_lit0(NULL, "linear", "Use incrementing number instead of rand."),
       seed_rand = arg_int0(NULL, "seed", "INT", "Seed the built-in rand."),
+      iter_rand =
+          arg_int0(NULL, "iter", "MAX",
+                   "Liner rand function that rolls over each MAX increment. "
+                   "Each word list (max 16) has a unique counter. When one "
+                   "rand rolls over the next is incremented."),
       n_runs = arg_int0("n", "nruns", "INT", "Amount of attempts to run"),
       n_threads = arg_int0("t", "threads", "INT", "Amount of threads to run"),
       rand_file = arg_file0(NULL, "frand", "FILE",
@@ -207,6 +217,9 @@ struct muzzy_config muzzy_args_to_config(int argc, char **argv) {
   } else if (linear->count) {
     cfg.rand = muzzy_lrand;
     cfg.rand_cfg = muzzy_rand_cfg_init();
+  } else if (iter_rand->count) {
+    cfg.rand = muzzy_iter_rand;
+    cfg.rand_cfg = muzzy_rand_cfg_iter(iter_rand->ival[0]);
   } else {
     cfg.rand = muzzy_frand;
 

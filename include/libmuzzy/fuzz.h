@@ -31,9 +31,9 @@ const char *muzzy_words_next(const char **words, int64_t i);
 // All occurances of 'replace' are replaced with the apropriate list of words
 // If n is set to -1 all words are replaced, otherwise it will stop when no word
 // is left to replace
-char *muzzy_word_rep(const char *input, const char *replace, const char *word,
-                     ssize_t n, struct muzzy_buffer *buf);
-char *muzzy_word_rep_rand(const char *input, const char *replace,
+char *muzzy_word_rep(int id, const char *input, const char *replace,
+                     const char *word, ssize_t n, struct muzzy_buffer *buf);
+char *muzzy_word_rep_rand(int id, const char *input, const char *replace,
                           const char **words, size_t words_len, ssize_t n,
                           muzzy_rand rand, struct muzzy_rand_cfg *rand_cfg,
                           struct muzzy_buffer *buf);
