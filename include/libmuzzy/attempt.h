@@ -22,19 +22,6 @@
 
 #define MUZZY_ATTEMPT_THREADS_MAX 64
 
-struct muzzy_attempt_var {
-  // NULL terminated args array that is used
-  // as an input for exec
-  const char **args_fuzzed;
-
-  // a/b buffer of muzzy_buffers
-  struct muzzy_vec buf0;
-  struct muzzy_vec buf1;
-
-  char cond_out[MUZZY_COND_OUT_LEN];
-  struct muzzy_buffer out;
-};
-
 // an attempt is the execution enviornment for a fuzzer
 // execute the fuzzer based in all word lists,
 // run the command provided and apply all comparisons
@@ -61,7 +48,7 @@ struct muzzy_attempt {
   // conditions (muzzy_cond)
   struct muzzy_vec cond_list;
 
-  int32_t n_runs;
+  atomic_int n_runs;
   int32_t delay_ms;
 
   int32_t n_threads;
@@ -71,6 +58,21 @@ struct muzzy_attempt {
   bool no_echo_cmd;
   bool no_cmd_out;
   bool only_ok;
+};
+
+struct muzzy_attempt_var {
+  // NULL terminated args array that is used
+  // as an input for exec
+  const char **args_fuzzed;
+
+  // a/b buffer of muzzy_buffers
+  struct muzzy_vec buf0;
+  struct muzzy_vec buf1;
+
+  char cond_out[MUZZY_COND_OUT_LEN];
+  struct muzzy_buffer out;
+
+  struct muzzy_attempt *attempt;
 };
 
 struct muzzy_attempt muzzy_attempt_init(void);

@@ -31,6 +31,7 @@ enum muzzy_error {
   // errno is stored in err_detail
   MUZZY_ERR_PIPE,
   MUZZY_ERR_FORK,
+  MUZZY_ERR_THREAD,
   MUZZY_ERR_UNTERMINATED_TOKEN,
   MUZZY_ERRNO
 };

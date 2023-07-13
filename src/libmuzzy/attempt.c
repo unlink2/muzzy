@@ -9,9 +9,11 @@
 #include "libmuzzy/cond.h"
 #include "libmuzzy/color.h"
 #include <limits.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <threads.h>
 #include <unistd.h>
 #include <sys/wait.h>
 #include <stdatomic.h>
@@ -70,6 +72,7 @@ struct muzzy_attempt muzzy_attempt_from_cfg(struct muzzy_config *cfg) {
   self.args_len = args_len;
 
   self.n_runs = cfg->n_runs;
+  self.n_threads = cfg->n_threads;
   self.delay_ms = cfg->delay_ms;
   self.rand_cfg = cfg->rand_cfg;
   self.rand = cfg->rand;
@@ -80,8 +83,8 @@ struct muzzy_attempt muzzy_attempt_from_cfg(struct muzzy_config *cfg) {
   self.no_cmd_out = cfg->no_cmd_out;
   self.only_ok = cfg->only_ok;
 
-  muzzy_dbg("Delay %d ms\nN-runs: %d\nDry: %d\n", self.delay_ms, self.n_runs,
-            self.dry);
+  muzzy_dbg("Delay %d ms\nN-runs: %d\nThreads: %d\nDry: %d\n", self.delay_ms,
+            self.n_runs, self.n_threads, self.dry);
 
   if (strcmp(MUZZY_STDSTREAM_PATH, cfg->out_path) == 0) {
     self.out_to = stdout;
@@ -348,15 +351,58 @@ int muzzy_attempt_run_sync(struct muzzy_attempt *self,
       usleep(self->delay_ms);
     }
   }
+
+  muzzy_err_print(stderr);
+
   return act_exit_code;
 }
 
-int muzzy_attempt_run(struct muzzy_attempt *self) {
-  struct muzzy_attempt_var var = muzzy_attempt_var_init(self->args_len);
-  int act_exit_code = muzzy_attempt_run_sync(self, &var);
-  muzzy_attempt_var_free(&var);
+int muzzy_attempt_run_async(void *data) {
+  struct muzzy_attempt_var *var = data;
 
-  return act_exit_code;
+  return muzzy_attempt_run_sync(var->attempt, var);
+}
+
+int muzzy_attempt_run(struct muzzy_attempt *self) {
+  if (self->n_threads) {
+    int threads_exit_code = 0;
+
+    thrd_t threads[MUZZY_ATTEMPT_THREADS_MAX];
+    struct muzzy_attempt_var vars[MUZZY_ATTEMPT_THREADS_MAX];
+
+    // spawn
+    for (size_t i = 0; i < self->n_threads; i++) {
+      vars[i] = muzzy_attempt_var_init(self->args_len);
+      vars[i].attempt = self;
+
+      int rc = thrd_create(&threads[i], muzzy_attempt_run_async, &vars[i]);
+      if (rc != thrd_success) {
+        muzzy_err_set(MUZZY_ERR_THREAD);
+      }
+    }
+
+    // join threads
+    for (size_t i = 0; i < self->n_threads; i++) {
+      int ec = 0;
+      thrd_join(threads[i], &ec);
+      if (ec) {
+        threads_exit_code = ec;
+      }
+    }
+
+    // free vats
+    for (size_t i = 0; i < self->n_threads; i++) {
+      muzzy_attempt_var_free(&vars[i]);
+    }
+
+    return threads_exit_code;
+  } else {
+    struct muzzy_attempt_var var = muzzy_attempt_var_init(self->args_len);
+    int act_exit_code = muzzy_attempt_run_sync(self, &var);
+    muzzy_attempt_var_free(&var);
+
+    return act_exit_code;
+  }
 }
 
 void muzzy_attempt_free(struct muzzy_attempt *self) {
