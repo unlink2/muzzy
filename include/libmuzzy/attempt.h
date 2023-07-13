@@ -20,6 +20,19 @@
 
 #define MUZZY_BUF_READ 4096
 
+struct muzzy_attempt_var {
+  // NULL terminated args array that is used
+  // as an input for exec
+  const char **args_fuzzed;
+
+  // a/b buffer of muzzy_buffers
+  struct muzzy_vec buf0;
+  struct muzzy_vec buf1;
+
+  char cond_out[MUZZY_COND_OUT_LEN];
+  struct muzzy_buffer out;
+};
+
 // an attempt is the execution enviornment for a fuzzer
 // execute the fuzzer based in all word lists,
 // run the command provided and apply all comparisons
@@ -29,21 +42,6 @@
 // shared will be shared across threads whereas unique parts will be created
 // for each thread
 struct muzzy_attempt {
-  // variable data
-  struct {
-
-    // NULL terminated args array that is used
-    // as an input for exec
-    const char **args_fuzzed;
-
-    // a/b buffer of muzzy_buffers
-    struct muzzy_vec buf0;
-    struct muzzy_vec buf1;
-
-    char cond_out[MUZZY_COND_OUT_LEN];
-    struct muzzy_buffer out;
-  };
-
   // vec of word lists
   struct muzzy_vec word_lists;
   struct muzzy_rand_cfg rand_cfg;
@@ -52,6 +50,7 @@ struct muzzy_attempt {
 
   // NULL terminated input arguments
   const char **args;
+  size_t args_len;
 
   // dump out to this file
   FILE *out_to;
@@ -70,6 +69,7 @@ struct muzzy_attempt {
 };
 
 struct muzzy_attempt muzzy_attempt_init(void);
+struct muzzy_attempt_var muzzy_attempt_var_init(size_t args_len);
 
 struct muzzy_attempt muzzy_attempt_from_cfg(struct muzzy_config *cfg);
 
@@ -108,9 +108,8 @@ void muzzy_attempt_args_to_buffer(struct muzzy_vec *dst, const char **src);
 // not safe!
 int muzzy_attempt_run(struct muzzy_attempt *self);
 
-// runs until an exit condition is met
-int muzzy_attempt_run_all(struct muzzy_attempt *self);
-
 void muzzy_attempt_free(struct muzzy_attempt *self);
+
+void muzzy_attempt_var_free(struct muzzy_attempt_var *self);
 
 #endif
