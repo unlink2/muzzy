@@ -29,6 +29,21 @@
 // shared will be shared across threads whereas unique parts will be created
 // for each thread
 struct muzzy_attempt {
+  // variable data
+  struct {
+
+    // NULL terminated args array that is used
+    // as an input for exec
+    const char **args_fuzzed;
+
+    // a/b buffer of muzzy_buffers
+    struct muzzy_vec buf0;
+    struct muzzy_vec buf1;
+
+    char cond_out[MUZZY_COND_OUT_LEN];
+    struct muzzy_buffer out;
+  };
+
   // vec of word lists
   struct muzzy_vec word_lists;
   struct muzzy_rand_cfg rand_cfg;
@@ -37,17 +52,6 @@ struct muzzy_attempt {
 
   // NULL terminated input arguments
   const char **args;
-
-  // NULL terminated args array that is used
-  // as an input for exec
-  const char **args_fuzzed;
-
-  // a/b buffer of muzzy_buffers
-  struct muzzy_vec buf0;
-  struct muzzy_vec buf1;
-
-  char cond_out[MUZZY_COND_OUT_LEN];
-  struct muzzy_buffer out;
 
   // dump out to this file
   FILE *out_to;
