@@ -83,8 +83,8 @@ struct muzzy_attempt muzzy_attempt_from_cfg(struct muzzy_config *cfg) {
   self.no_cmd_out = cfg->no_cmd_out;
   self.only_ok = cfg->only_ok;
 
-  muzzy_dbg("Delay %d ms\nN-runs: %d\nThreads: %d\nDry: %d\n", self.delay_ms,
-            self.n_runs, self.n_threads, self.dry);
+  muzzy_info("Delay %d ms\nN-runs: %d\nThreads: %d\nDry: %d\n", self.delay_ms,
+             self.n_runs, self.n_threads, self.dry);
 
   if (strcmp(MUZZY_STDSTREAM_PATH, cfg->out_path) == 0) {
     self.out_to = stdout;

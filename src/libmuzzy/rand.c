@@ -50,7 +50,6 @@ int64_t muzzy_lrand(int id, void *data) {
   return cfg->linear++;
 }
 
-// TODO: test this implementation
 int64_t muzzy_iter_rand(int id, void *data) {
   struct muzzy_rand_cfg *cfg = data;
   if (id > MUZZY_RAND_ITER_MAX || cfg->next_after == 0) {
