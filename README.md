@@ -1,6 +1,6 @@
 # muzzy
 
-Muzzy is a fuzzy search tool with batteries included.
+Muzzy (micro fuzzy) is a micro fuzzing command line tool with batteries included.
 
 ## Table of content
 
@@ -8,11 +8,10 @@ Muzzy is a fuzzy search tool with batteries included.
 - [Usage](#Usage)
 - [License](#License)
 - [Contributing](#Contributing)
-- [TODO](#TODO)
 
 ## Installation
 
-To build this program you will require a recent C compiler, premake, `libargtable2` and `libcmocka` for unit tests.
+To build this program you will require a recent C compiler, premake, `libargtable2` and `libcmocka` for tests.
 
 ```sh
 premake gmake # to build gnu make file 
@@ -21,11 +20,11 @@ make # to compile all targets
 
 ## Usage
 
-1) Rename `muzzy` to the project's name in all files and folders 
-
 ## License
 
 This program is distributed under the terms of the MIT License.
 
 ## Contributing
 
+Contributions are always welcome!  
+If you have implemented a bug fix or a new feature simply open a pull request! 
